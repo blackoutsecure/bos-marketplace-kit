@@ -99,6 +99,18 @@ marketplace-kit doc-inputs
 # Bootstrap a community-health file from a template
 marketplace-kit generate-policy security --owner my-org
 marketplace-kit generate-policy list   # show all available kinds
+
+# Scaffold an MP-compliant action.yml when starting a fresh repo
+# (passes every kit check out of the box, including MP010's
+# 125-char description limit)
+marketplace-kit generate-policy action-yml --owner my-org --project-name my-cool-action
+
+# Install every recommended community-health, supply-chain, and lint
+# file at its canonical path (refuses to overwrite without --force).
+# Note: `action.yml` is intentionally NOT scaffolded by --all to avoid
+# overwriting a real Marketplace manifest. Scaffold it explicitly with
+# `generate-policy action-yml` (above) on a fresh repo.
+marketplace-kit install --all --owner my-org
 ```
 
 The composite actions are the canonical Marketplace surface; the CLI
@@ -739,7 +751,7 @@ listing card and across search results.
 ### MP003 — `description` is non-empty
 
 `description:` is the one-line subtitle on the Marketplace card. See
-also: [OP001](#op001--description-length).
+also: [MP010](#mp010--description-is-too-long).
 
 ### MP004 — `runs.using` is present
 
@@ -785,11 +797,16 @@ A description shorter than 10 characters is unlikely to be useful on
 the Marketplace card and may be rejected. Expand to a complete
 sentence (~30-125 chars).
 
-### OP001 — Description length
+### MP010 — Description is too long
 
-Marketplace truncates description >125 characters in card view.
-Tighten the description to a single short sentence; use `README.md`
-for elaboration.
+`description:` must be **125 characters or fewer**. Marketplace
+truncates anything past the limit in the card view, so a longer
+description ships a truncated subtitle to consumers — a hard fail by
+default. Tighten to a single short sentence; use `README.md` for
+elaboration.
+
+Enforced by both the `check` composite action and the
+`bos-marketplace-kit` CLI; cannot be downgraded to a warning.
 
 ### OP003 — `author` is set
 
@@ -1016,6 +1033,38 @@ Placeholders: `{{owner}}`, `{{repo_name}}`, `{{contact_email}}`,
 conservative defaults (`YOUR-ORG`, CWD basename,
 `security@example.com`).
 
+#### Install one (or every) recommended file
+
+`generate-policy` is the low-level emitter. `install` is the safe
+one-shot scaffolder you reach for when bootstrapping a fresh repo
+— it writes to canonical paths, refuses to overwrite existing files
+by default, and can install every recommended kind in one call:
+
+```bash
+# Scaffold a single kind at its canonical path. Refuses to
+# overwrite an existing file — pass --force to replace it.
+marketplace-kit install codeql-workflow --owner my-org
+
+# Install every recommended community-health, supply-chain, and
+# lint file that isn't already present. Existing files are left
+# alone (use --force to overwrite all). Use --dry-run to preview.
+marketplace-kit install --all --owner my-org
+
+# Preview without touching anything.
+marketplace-kit install --all --owner my-org --dry-run
+```
+
+What `install --all` covers: `security`, `code-of-conduct`,
+`contributing`, `support`, `issue-bug`, `issue-feature`,
+`pr-template`, `funding`, `dependabot`, `codeql-workflow`,
+`markdownlint`, `yamllint`. Opt-in kinds (`scorecard-workflow`,
+`security-devops-workflow`, `shellcheckrc`) must be installed
+explicitly by name to avoid surprising consumers who don't want them.
+
+After `install`, run `marketplace-kit check` to confirm the kit's
+rules pass — the canonical pipeline is **check → install → commit →
+check passes → CI green**.
+
 #### `auto_generate_missing` — reserved for a future iteration
 
 A `auto_generate_missing: false | true` input is declared (default
@@ -1042,7 +1091,7 @@ generate-policy <kind>`).
 | ID    | File(s)                                                                    | Default policy | Generator kind             |
 |-------|----------------------------------------------------------------------------|----------------|----------------------------|
 | DP001 | `.github/dependabot.yml` / `.dependabot.yaml`                              | `warn`         | `dependabot`               |
-| CQ001 | any workflow referencing `github/codeql-action`                            | `warn`         | `codeql-workflow`          |
+| CQ001 | any workflow referencing `github/codeql-action`                            | `warn`         | `codeql-workflow` *or* `code-scan-workflow` (mutually exclusive — pick one) |
 | LT001 | `.editorconfig`                                                            | `warn`         | (no template; trivial)     |
 | LT002 | `.gitattributes`                                                           | `warn`         | (no template; repo-shaped) |
 | LT003 | `.gitignore`                                                               | `warn`         | (no template; repo-shaped) |
@@ -1052,6 +1101,38 @@ generate-policy <kind>`).
 The lint rules default to `skip` (LT004/LT005) or `warn` (LT001-003)
 so legacy repos can adopt the kit without immediate cleanup. Promote
 to `fail` as your repo catches up.
+
+#### CQ001 — choose ONE of `codeql-workflow` or `code-scan-workflow`
+
+Two templates satisfy CQ001; pick exactly one. Running both doubles
+CodeQL spend on every dev push (same `github/codeql-action`, same
+SARIF, twice the minutes) and splits the SHA-bump source of truth
+across two files.
+
+| | `codeql-workflow` | `code-scan-workflow` |
+|---|---|---|
+| **What ships** | Standalone `.github/workflows/codeql.yml` with `github/codeql-action` SHAs pinned inline | `.github/workflows/bos-launchpad-code-scan.yml` that calls the hub reusable `blackoutsecure/bos-automation-hub/.github/workflows/bos-launchpad-code-scan.yml@main` |
+| **SHA rollouts** | You bump SHAs in this repo on every CodeQL release | One hub commit propagates to every consumer on next run |
+| **Covers** | CodeQL only | CodeQL **and** the `bos-code-scanning-kit@v1` composite (posture audit + actionlint / gitleaks / shellcheck) |
+| **Cross-org / external use** | Self-contained — no hub dependency | Requires read access to `blackoutsecure/bos-automation-hub` |
+| **Producer-kit escape hatch** | n/a | Set `enable_kit_composite: false` if this repo IS the producer of `bos-code-scanning-kit@v1` |
+| **Advanced posture probes (PS002/PS003)** | n/a | Built-in preflight + `SCANNING_PAT` plumbing |
+
+The `marketplace-kit install` command emits a warning if you try to
+scaffold one template next to an existing canonical file for the
+other. The recommended migration path:
+
+```bash
+# Migrate from standalone CodeQL to the hub-reusable form:
+marketplace-kit install code-scan-workflow --owner my-org
+rm .github/workflows/codeql.yml                       # commit in same PR
+```
+
+Both templates produce a top-level workflow file referencing
+`github/codeql-action` (the latter as a `# uses:` documentary
+comment in the header), which is what CQ001 actually keys off — it
+inspects workflow files at the repo's surface, not transitive
+reusable callees.
 
 ### GH001-GH003 — GitHub Advanced Security toggles (live repo settings)
 
@@ -1243,3 +1324,4 @@ If you wire this kit into your own CI:
 ## License
 
 [Apache License 2.0](LICENSE). See [`NOTICE`](NOTICE) for third-party attributions.
+
