@@ -585,6 +585,131 @@ The release workflow:
    `main`, and pushes a clean commit + tag.
 4. Creates a GitHub Release on the new tag.
 
+### Step 5b — Tokens, secrets, and variables
+
+The release workflow needs auth to push the promotion commit + tag
+to `main`. The kit's own [release.yml](.github/workflows/release.yml)
+already implements every pattern below; this section is the contract
+for anyone copying that template into another repo.
+
+#### Tokens
+
+| Token | Required? | Identity | Used for | Scopes / permissions | Why |
+|-------|-----------|----------|----------|----------------------|-----|
+| `secrets.GITHUB_TOKEN` | **Mandatory** (auto-provided by Actions) | `github-actions[bot]` (Integration App ID `15368`) | `actions/checkout`, default `git push` to `main` + tag, `gh release create`, all `gh api` probes (FUNDING resolver) | Job-level `permissions: { contents: write }` on the `promote` job; `contents: write` on the `release` job for the GitHub Release create. | Cannot be disabled. Every workflow run is auto-issued one per job (TTL = job lifetime). Without it, `actions/checkout` cannot clone, `gh api` cannot authenticate, and the workflow simply cannot run. There is no "off" mode. |
+| `secrets.RELEASE_PAT` | Optional (opt-in) | The PAT owner (user) or the GitHub App backing a fine-grained PAT | Same push as above, when `GITHUB_TOKEN` cannot satisfy branch protection | **Fine-grained (recommended):** Contents = Read & Write on the action repo, Metadata = Read-only. **Classic:** the `repo` scope (see [classic PAT specifics](#classic-pat-specifics) below for the explicit checkbox list). | Only needed when `main` is locked behind a ruleset or classic protection that `GITHUB_TOKEN` cannot bypass. The PAT's identity (or its backing App) MUST be listed in the ruleset's `bypass_actors`. The resolver probes `/user` (validity), `repos/<repo>.permissions.push` (identity), AND `POST /repos/<repo>/git/blobs` (token scope) BEFORE checkout and fails the job with a remediation hint on any misconfiguration — silent fallback would hide operator intent. When unset, the resolver emits a notice and falls through to `GITHUB_TOKEN`. |
+
+##### Classic PAT specifics
+
+Created at <https://github.com/settings/tokens> → **Generate new
+token (classic)**. The kit has been tested against classic PATs as
+well as fine-grained; classic remains supported because some org
+policies disable fine-grained PATs entirely. Use the minimum-scope
+recipe below — anything broader is unnecessary.
+
+**Required (tick exactly these):**
+
+| Scope (top-level) | Tick? | Why |
+|---|---|---|
+| `repo` (Full control of private repositories) | ✅ **Yes** | This single top-level scope auto-selects `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, and `security_events`. It is the only classic scope that grants `git push` + ref/tag write. There is no "contents only" granular variant in classic — `repo` is the smallest unit that works. |
+
+**Do NOT tick (over-scoped for this PAT's single job):**
+
+| Scope | Why not |
+|---|---|
+| `workflow` | Promote intentionally never writes `.github/workflows/**` to `main` (the guard hard-blocks it). |
+| `admin:org`, `write:org`, `read:org`, `manage_runners:org` | Org admin is not needed to push a tag to a single repo. |
+| `admin:enterprise`, `manage_runners:enterprise`, `manage_billing:enterprise`, `read:enterprise`, `scim:enterprise` | Enterprise-level access is never required for a per-repo release. |
+| `delete_repo`, `delete:packages` | Destructive scopes irrelevant to release publishing. |
+| `admin:public_key`, `admin:repo_hook`, `admin:org_hook` | Not used. |
+| `gist`, `notifications`, `user`, `write:discussion`, `read:discussion` | Not used. |
+| `audit_log`, `codespace`, `project`, `copilot`, `read:packages`, `write:packages` | Not used. |
+
+**SAML SSO authorize (mandatory for `blackoutsecure` and any other
+SAML-enforced org):**
+
+1. On the token-create / token-edit page, under **"Configure SSO"**
+   next to the saved token, click *Authorize* for each SAML org you
+   need access to.
+2. Save. Without this, every API call against the org returns HTTP
+   403 with body `Resource protected by organization SAML
+   enforcement` and the `resolve-token` step in `release.yml` will
+   fail fast with a SAML-specific remediation pointing back at this
+   step.
+
+**Expiration:** ≤ 90 days. Rotate on schedule — a leaked classic PAT
+with `repo` is more dangerous than a leaked fine-grained PAT because
+it can write to every private repo the owner can see, not just the
+selected ones.
+
+**Storage:** save as `RELEASE_PAT` under repo Settings → Secrets and
+variables → Actions → Secrets (not Variables — secrets are masked in
+logs).
+
+**Recommendation:** unless your `main` is behind protection that
+`GITHUB_TOKEN` (`github-actions[bot]`, App `15368`) cannot bypass,
+leave `RELEASE_PAT` unset. The resolver falls through to
+`GITHUB_TOKEN` cleanly, with no SAML cycle, no scope mistakes, and
+no rotation overhead. Configure `RELEASE_PAT` only when an audit
+trail requires the release commit + tag to be attributed to a human
+identity, or when a ruleset's `bypass_actors` explicitly names the
+PAT owner.
+
+#### Repository variables
+
+Configure under **Settings → Secrets and variables → Actions → Variables**.
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DEFAULT_RUNNER` | *(required)* | Either a bare runner label (e.g. `ubuntu-latest`) or a JSON array string (e.g. `'["self-hosted","linux","x64"]'`). Both shape and presence are enforced by the `preflight-runner-config` job. |
+| `BOS_FUNDING_ENABLED` | `true` (when unset) | Master switch for the FUNDING.yml resolver. When `true`/`1`/`yes`/`on`, the resolver checks per-repo → org `.github` → emits notices/warnings. When set to anything else (`false`, `0`, etc.), the resolver skips all probes, excludes `.github/FUNDING.yml` from the allowlist, and emits one notice acknowledging the opt-out. The Sponsor button on the Marketplace listing/repo header will be absent. |
+
+#### What the FUNDING resolver decides
+
+The `resolve-funding` step in [release.yml](.github/workflows/release.yml)
+classifies every release into one of seven outcomes (surfaced as the
+job output `funding_status` and shown in the job summary):
+
+| `funding_status` | Allowlist | Surface | Trigger |
+|------------------|-----------|---------|---------|
+| `disabled` | excluded | `::notice::` | `vars.BOS_FUNDING_ENABLED` is non-truthy |
+| `per-repo` | **included** | `::notice::` | `.github/FUNDING.yml` exists on `dev` (promoted to `main` as an override) |
+| `inherited` | excluded | `::notice::` | Owner is an org, `<org>/.github` is public and contains FUNDING.yml (root, `.github/`, or `docs/`) |
+| `user-no-inheritance` | excluded | `::warning::` | Repo owner is a user account — GitHub does not inherit default community files for user repos |
+| `no-org-dotgithub` | excluded | `::warning::` | `<org>/.github` is missing or private/internal (inheritance is public-only) |
+| `org-dotgithub-not-public` | excluded | `::warning::` | `<org>/.github` exists but is `private`/`internal` |
+| `org-missing-funding` | excluded | `::warning::` | `<org>/.github` is public but contains no FUNDING.yml in any of the three honored locations |
+
+Every warning includes a remediation hint. The resolver itself never
+fails the release — it informs.
+
+#### Sponsor button alignment
+
+Independently of FUNDING.yml content, the repo-level **Settings →
+Features → Sponsorships** checkbox controls whether the Sponsor
+button renders at all. The `check-funding-alignment` step in
+[release.yml](.github/workflows/release.yml) cross-references the
+resolver's `funding_status` against the rendered feature flag
+(`Repository.hasSponsorshipsEnabled`) and the effective link list
+(`Repository.fundingLinks`, read via GraphQL with `GITHUB_TOKEN`).
+
+| `alignment_status` | Sponsorships feature | Effective links rendered | Verdict | Surface |
+|--------------------|----------------------|--------------------------|---------|---------|
+| `aligned` | on | >0 | Working as intended | `::notice::` |
+| `aligned-off` | off | 0 | Intentionally off; consistent | `::notice::` |
+| `button-empty` | on | 0 | **Misaligned** — Sponsor button opens an empty modal | `::warning::` |
+| `links-hidden` | off | (n/a) | **Misaligned** — FUNDING content exists but no button renders | `::warning::` |
+| `unknown` | (GraphQL probe failed) | n/a | Diagnostic-only; release proceeds | `::notice::` |
+
+GitHub exposes **no public API to flip the Sponsorships feature flag**
+(no REST field on `PATCH /repos/{}`, no GraphQL mutation — it is
+intentionally human-gated). This step is therefore detection-only: it
+emits a warning with a one-click Settings URL on misalignment and
+never fails the release. Fix the button-empty / links-hidden cases
+once by ticking or unticking the checkbox at
+`https://github.com/<owner>/<repo>/settings` and the warning goes
+silent on the next release.
+
 ### Step 6 — Configure branch protection on `main`
 
 Two options, in order of preference:
