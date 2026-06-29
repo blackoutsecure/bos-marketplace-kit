@@ -199,7 +199,7 @@ jobs:
       contents: read
       actions: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: dev
           fetch-depth: 1
@@ -374,7 +374,7 @@ jobs:
     outputs:
       dev_sha: ${{ steps.gate.outputs.dev_sha }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: dev
           fetch-depth: 1
@@ -514,7 +514,7 @@ jobs:
     outputs:
       tag_name: ${{ steps.compute.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Need full tag history to find the latest vX.Y.Z.
           ref: dev
@@ -771,7 +771,7 @@ jobs:
             echo "token_identity=${login}"
           } >> "${GITHUB_OUTPUT}"
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: dev
           fetch-depth: 0
@@ -1133,7 +1133,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Check out the just-promoted target SHA so any release-notes
           # artifacts read the post-promote tree.
@@ -1295,7 +1295,7 @@ jobs:
 
       - if: steps.token-check.outputs.has_pat == 'true'
         name: Checkout dev (pre-promote source)
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Read the `dev` tree — the exact source `promote` fast-forwards
           # into `main`, so the AI description and topic seed come from
