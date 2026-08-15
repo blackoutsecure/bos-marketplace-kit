@@ -365,7 +365,8 @@ Tiers merge in order — each one overrides the one above it:
    at `.github/marketplace-kit-global-config.json`. Create it only if
    you want org-wide policy; nothing breaks when it is absent.
 4. **Repo config (optional)** — per-repo overrides in the `marketplace_kit`
-   section of `.github/bos-universal-config.json` (preferred), or
+   section of `.github/bos-universal-config.json` (preferred, and the path
+   every automation-hub kicker passes explicitly), or
    `bos-universal-config.json`, `marketplace-kit.json`,
    `.marketplace-kit.json`.
 5. **Workflow inputs** — anything you set non-empty in `with:` wins over
