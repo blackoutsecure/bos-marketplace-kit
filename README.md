@@ -1564,6 +1564,35 @@ The promote workflow will:
 * Tag `main` at that commit with `v1.0.0`.
 * Create a GitHub Release.
 
+#### Promote without publishing a Release
+
+The managed `bos-universal-marketplace-kicker.yml` also exposes a
+promote-only operation for repositories that want to curate `main` before
+publishing a release:
+
+```bash
+gh workflow run bos-universal-marketplace-kicker.yml \
+  -f operation=promote \
+  -f tag_name=v1.0.0
+```
+
+This promotes the configured allowlist from `dev` to `main` and creates the
+tag, but intentionally skips GitHub Release creation. Use
+`-f operation=release` for the complete promote + tag + GitHub Release flow.
+The operation is useful for inspecting the curated Marketplace branch or
+separating branch promotion from release publication. It remains in the
+Marketplace workflow rather than Launchpad because Launchpad owns a different
+pipeline: upstream tracking, Docker/Balena artifacts, security scans, and
+optional GitHub Releases.
+
+By default, promote-only also requires a recent published stable release on
+the source branch (`dev`) before it proceeds. The default freshness window is
+168 hours (7 days), and the release tag must be reachable from the source
+branch. Configure `marketplace.require_source_release: false` to disable the
+gate, or change `marketplace.source_release_max_age_hours` in the global or
+repository config. The normal `release` operation does not require this prior
+release because it creates the release as part of its own transaction.
+
 ### Step 8 — Publish to Marketplace
 
 Navigate to your repo's Releases page on GitHub. On the `v1.0.0`
