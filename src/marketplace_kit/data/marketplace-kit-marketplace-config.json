@@ -39,13 +39,22 @@
     "require_security_devops": "skip",
     "require_scorecard": "skip",
 
+    "require_sponsorship": "skip",
+    "sponsorship_account": "",
+
     "require_repo_description": "warn",
     "require_repo_homepage": "skip",
     "require_repo_topics": "warn",
+    "require_repo_issues": "warn",
     "repo_description_max_length": 350,
     "repo_description_min_length": 30,
     "version": "auto",
     "license": "auto",
+
+    "require_license_audit": "warn",
+    "allowed_licenses": [],
+    "denied_licenses": [],
+    "license_catalogue_max_age_days": 400,
 
     "auto_generate_missing": false,
 

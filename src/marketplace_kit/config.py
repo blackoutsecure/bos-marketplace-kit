@@ -173,13 +173,22 @@ OPTIONS: tuple[Option, ...] = (
     _policy("require_security_devops", "REQ_SECURITY_DEVOPS"),
     _policy("require_scorecard", "REQ_SCORECARD"),
 
+    _policy("require_sponsorship", "REQ_SPONSORSHIP"),
+    Option("sponsorship_account", "SPONSORSHIP_ACCOUNT", "text", ""),
+
     _policy("require_repo_description", "REQ_REPO_DESCRIPTION"),
     _policy("require_repo_homepage", "REQ_REPO_HOMEPAGE"),
     _policy("require_repo_topics", "REQ_REPO_TOPICS"),
+    _policy("require_repo_issues", "REQ_REPO_ISSUES"),
     Option("repo_description_max_length", "REPO_DESC_MAX_LEN", "int", 350),
     Option("repo_description_min_length", "REPO_DESC_MIN_LEN", "int", 30),
     Option("version", "MK_PUB_VERSION", "text", "auto"),
     Option("license", "MK_PUB_LICENSE", "text", "auto"),
+
+    _policy("require_license_audit", "REQ_LICENSE_AUDIT"),
+    Option("allowed_licenses", "ALLOWED_LICENSES", "list", ()),
+    Option("denied_licenses", "DENIED_LICENSES", "list", ()),
+    Option("license_catalogue_max_age_days", "LICENSE_CATALOGUE_MAX_AGE_DAYS", "int", 400),
 
     Option("auto_generate_missing", "AUTO_GENERATE_MISSING", "bool", False),
 

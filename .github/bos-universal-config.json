@@ -1,76 +1,95 @@
 {
-    "marketplace": {
-        "enabled": true,
-        "target_branch": "main",
-        "allowlist_paths": [
-            "action.yml",
-            ".github/actions",
-            "src",
-            "pyproject.toml",
-            "README.md",
-            "LICENSE",
-            "NOTICE"
-        ],
-        "blocked_paths": [
-            ".github/workflows/",
-            ".editorconfig",
-            ".gitattributes",
-            ".gitignore",
-            ".markdownlint.json",
-            ".markdownlint.yaml",
-            ".shellcheckrc",
-            ".yamllint.yml",
-            "scripts/",
-            "test/"
-        ],
-        "required_paths": [
-            ".github/dependabot.yml",
-            "action.yml",
-            ".github/actions",
-            "pyproject.toml",
-            "README.md",
-            "LICENSE",
-            "NOTICE"
-        ],
-        "include_dependabot_config": true,
-        "include_github_metadata": false,
-        "repo_metadata": {
-            "enable": true,
-            "homepage": "https://github.com/marketplace/actions/blackout-secure-marketplace-kit",
-            "ai_model": "auto",
-            "description_mode": "auto",
-            "description_fallback": "",
-            "use_existing_readme": true,
-            "generate_readme": false,
-            "generate_topics": true,
-            "topics_fallback": "github-actions marketplace composite-action ci-cd release-management devsecops publishing",
-            "categories": {
-                "primary": "auto",
-                "secondary": "auto"
-            },
-            "marketplace_slug": "blackout-secure-marketplace-kit"
-        }
-    },
-    "marketplace_kit": {
-        "use_marketplace_config": true,
-        "defer_to_code_scanning_kit": true
-    },
-    "remediation": {
-        "mode": "notify",
-        "min_confidence": "high",
-        "allow_workflow_changes": false,
-        "allow_security_control_changes": false,
-        "allow_auto_merge": false
-    },
-    "managed_file_sync": {
-        "use_marketplace_config": true,
-        "services": [
-            "common",
-            "lf_line_endings",
-            "dependabot_actions",
-            "dependabot_pip",
-            "editorconfig",
-            "python_ecosystem"
-        ]
+  "marketplace": {
+    "enabled": true,
+    "target_branch": "main",
+    "allowlist_paths": [
+      "action.yml",
+      ".github/actions",
+      "src",
+      "docs",
+      "pyproject.toml",
+      "README.md",
+      "LICENSE",
+      "NOTICE"
+    ],
+    "blocked_paths": [
+      ".github/workflows/",
+      ".editorconfig",
+      ".gitattributes",
+      ".gitignore",
+      ".markdownlint.json",
+      ".markdownlint.yaml",
+      ".shellcheckrc",
+      ".yamllint.yml",
+      "scripts/",
+      "test/"
+    ],
+    "required_paths": [
+      ".github/dependabot.yml",
+      "action.yml",
+      ".github/actions",
+      "pyproject.toml",
+      "README.md",
+      "docs/RULES.md",
+      "LICENSE",
+      "NOTICE"
+    ],
+    "include_dependabot_config": true,
+    "include_github_metadata": false,
+    "repo_metadata": {
+      "enable": true,
+      "homepage": "https://github.com/marketplace/actions/blackout-secure-marketplace-kit",
+      "ai_model": "auto",
+      "description_mode": "auto",
+      "description_fallback": "",
+      "use_existing_readme": true,
+      "generate_readme": false,
+      "generate_topics": true,
+      "topics_fallback": "github-actions marketplace composite-action ci-cd release-management devsecops publishing",
+      "categories": {
+        "primary": "auto",
+        "secondary": "auto"
+      },
+      "marketplace_slug": "blackout-secure-marketplace-kit"
     }
+  },
+  "marketplace_kit": {
+    "use_marketplace_config": true,
+    "defer_to_code_scanning_kit": true
+  },
+  "remediation": {
+    "mode": "notify",
+    "min_confidence": "high",
+    "allow_workflow_changes": false,
+    "allow_security_control_changes": false,
+    "allow_auto_merge": false
+  },
+  "managed_file_sync": {
+    "use_marketplace_config": true,
+    "services": [
+      "common",
+      "lf_line_endings",
+      "dependabot_actions",
+      "dependabot_pip",
+      "editorconfig",
+      "python_ecosystem",
+      "license_catalogue_service"
+    ],
+    "service_definitions": {
+      "license_catalogue_service": {
+        "mode": "file",
+        "description": "OSI/SPDX licence catalogue and shared resolver for the LC### rules. Path override: this kit ships them as packaged data and a package module inside marketplace_kit.",
+        "files": [
+          {
+            "path": "src/marketplace_kit/data/osi-licenses.json",
+            "content_file": "legal/osi-licenses.json"
+          },
+          {
+            "path": "src/marketplace_kit/osi_catalogue.py",
+            "content_file": "legal/osi_catalogue.py"
+          }
+        ]
+      }
+    }
+  }
 }

@@ -3,7 +3,6 @@ description: >-
   Pre-publish validator for GitHub Marketplace Actions. Lints metadata,
   branding, naming, and security defaults.
 author: Blackout Secure
-
 branding:
   icon: check-circle
   color: blue
@@ -28,38 +27,38 @@ inputs:
   # optional repo config -> any input set here. See the "Configuration
   # inheritance and layering" section of the README.
   use_marketplace_config:
-    description: '`auto`, `true`, or `false`. Built-in best-practice defaults, on by default.'
+    description: "`auto`, `true`, or `false`. Built-in best-practice defaults, on by default."
     required: false
-    default: 'auto'
+    default: "auto"
   use_global_config:
-    description: '`auto` loads `.github/marketplace-kit-global-config.json` when present; `true` requires it; `false` disables it.'
+    description: "`auto` loads `.github/marketplace-kit-global-config.json` when present; `true` requires it; `false` disables it."
     required: false
-    default: 'auto'
+    default: "auto"
   global_config_path:
-    description: 'Org/hub-level config path. Empty uses the conventional path.'
+    description: "Org/hub-level config path. Empty uses the conventional path."
     required: false
-    default: ''
+    default: ""
   config_path:
-    description: 'Repo config path. Empty auto-discovers `.github/bos-universal-config.json`.'
+    description: "Repo config path. Empty auto-discovers `.github/bos-universal-config.json`."
     required: false
-    default: ''
+    default: ""
 
   action_yml_path:
-    description: 'Path to the action manifest. Default `action.yml`.'
+    description: "Path to the action manifest. Default `action.yml`."
     required: false
-    default: ''
+    default: ""
   fail_on_warning:
-    description: '`true` to treat OP### warnings as failures.'
+    description: "`true` to treat OP### warnings as failures."
     required: false
-    default: ''
+    default: ""
   skip_checks:
-    description: 'Comma-separated check IDs to skip (e.g. `OP003,SC002`).'
+    description: "Comma-separated check IDs to skip (e.g. `OP003,SC002`)."
     required: false
-    default: ''
+    default: ""
   workflow_dir:
     description: 'Workflow directory to scan. `auto` uses the config value; "" skips.'
     required: false
-    default: 'auto'
+    default: "auto"
 
   # ----- Community-health (CH###) pass-throughs ----------------------------
   # See `.github/actions/check/action.yml` for full semantics. These
@@ -73,46 +72,46 @@ inputs:
       set explicitly to use a PAT/fine-grained token with cross-repo
       contents:read.
     required: false
-    default: ''
+    default: ""
   org_health_repo:
     description: >-
       `owner/repo` containing fallback community-health files (e.g.
       `blackoutsecure/.github`). Defaults to `${owner}/.github` if
       empty.
     required: false
-    default: ''
+    default: ""
   check_org_health:
-    description: '`true` to enable org-health lookups for CH### rules.'
+    description: "`true` to enable org-health lookups for CH### rules."
     required: false
-    default: ''
+    default: ""
   require_security:
     description: "CH001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_code_of_conduct:
     description: "CH002 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_contributing:
     description: "CH003 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_support:
     description: "CH004 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_issue_templates:
     description: "CH005 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_pr_template:
     description: "CH006 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_funding:
     description: "CH### funding severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
 
   # ----- CH/SC source-mode pass-throughs ----------------------------------
   # Where each community-health file is expected to live:
@@ -126,35 +125,35 @@ inputs:
   community_health_source:
     description: "Global source mode: 'local', 'inherit', or 'either'."
     required: false
-    default: ''
+    default: ""
   security_source:
     description: "SC003 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   code_of_conduct_source:
     description: "CH001 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   contributing_source:
     description: "CH002 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   support_source:
     description: "CH003 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   issue_templates_source:
     description: "CH004 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   pr_template_source:
     description: "CH005 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
   funding_source:
-    description: "CH006 source override (or empty to use global)."
+    description: "CH006/SP002 source override (or empty to use global)."
     required: false
-    default: ''
+    default: ""
 
   # ----- AI auto-generation (FUTURE / NOT YET IMPLEMENTED) ----------------
   auto_generate_missing:
@@ -163,39 +162,39 @@ inputs:
       community-health files and open a PR. Stub today; reserved for
       a future release.
     required: false
-    default: ''
+    default: ""
 
   # ----- Posture profile / scope ------------------------------------------
   profile:
-    description: '`baseline` (default) or `strict` — see the README config schema.'
+    description: "`baseline` (default) or `strict` — see the README config schema."
     required: false
-    default: ''
+    default: ""
   enable_security_scan:
-    description: 'Run the security-posture rule families (SC/CQ/GH/MS/SR). Default `true`.'
+    description: "Run the security-posture rule families (SC/CQ/GH/MS/SR). Default `true`."
     required: false
-    default: ''
+    default: ""
   defer_to_code_scanning_kit:
-    description: '`auto`, `true`, or `false`. Skip rules already owned by bos-code-scanning-kit.'
+    description: "`auto`, `true`, or `false`. Skip rules already owned by bos-code-scanning-kit."
     required: false
-    default: ''
+    default: ""
 
   # ----- AI-assisted findings summary ------------------------------------
   enable_ai_findings_summary:
-    description: 'Summarise findings with an AI provider when reachable. Always falls back to local remediation.'
+    description: "Summarise findings with an AI provider when reachable. Always falls back to local remediation."
     required: false
-    default: ''
+    default: ""
   ai_findings_summary_provider:
     description: "`auto`, `none`, `github-models`, or `external`."
     required: false
-    default: ''
+    default: ""
   ai_model:
-    description: 'Model identifier for the AI summary (e.g. `openai/gpt-4o-mini`).'
+    description: "Model identifier for the AI summary (e.g. `openai/gpt-4o-mini`)."
     required: false
-    default: ''
+    default: ""
   local_heuristic_fallback:
-    description: 'Emit deterministic local remediation when no model is available.'
+    description: "Emit deterministic local remediation when no model is available."
     required: false
-    default: ''
+    default: ""
 
   # ----- DP/CQ/LT/GH/MS/SR pass-throughs ----------------------------------
   # New rule families added in v0.2.0+:
@@ -212,84 +211,111 @@ inputs:
   require_dependabot:
     description: "DP001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_codeql:
     description: "CQ001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_editorconfig:
     description: "LT001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_gitattributes:
     description: "LT002 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_gitignore:
     description: "LT003 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_markdownlint:
     description: "LT004 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_yamllint:
     description: "LT005 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_ghas_code_scanning:
     description: "GH001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_ghas_secret_scanning:
     description: "GH002 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_dependabot_alerts:
     description: "GH003 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_security_devops:
     description: "MS001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_scorecard:
     description: "SR001 severity: 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
+  require_sponsorship:
+    description: "SP001/SP002/SP003 severity (GitHub Sponsors listing approved, wired into FUNDING.yml, and rendering): 'fail', 'warn', or 'skip'."
+    required: false
+    default: ""
+  sponsorship_account:
+    description: "Login to check for a sponsors listing (SP001). Empty uses the repository owner."
+    required: false
+    default: ""
   require_repo_description:
     description: "RM001/RM002 severity (repo About-box description): 'fail', 'warn', or 'skip'."
     required: false
-    default: ''
+    default: ""
   require_repo_homepage:
     description: "RM003 severity (repo About-box homepage URL): 'fail', 'warn', or 'skip'. Malformed URLs always fail."
     required: false
-    default: ''
+    default: ""
   require_repo_topics:
     description: "RM004/RM005 severity (repo About-box topics): 'fail', 'warn', or 'skip'. Format violations and >20 topics always fail."
     required: false
-    default: ''
+    default: ""
+  require_repo_issues:
+    description: "RM006 severity (repo Issues tab enabled): 'fail', 'warn', or 'skip'."
+    required: false
+    default: ""
   repo_description_max_length:
-    description: 'Hard upper bound for the repo description (RM002). Default 350 (GitHub limit).'
+    description: "Hard upper bound for the repo description (RM002). Default 350 (GitHub limit)."
     required: false
-    default: ''
+    default: ""
   repo_description_min_length:
-    description: 'Lower bound below which the repo description triggers a warning (RM002). Default 30. Set 0 to disable.'
+    description: "Lower bound below which the repo description triggers a warning (RM002). Default 30. Set 0 to disable."
     required: false
-    default: ''
-
+    default: ""
+  require_license_audit:
+    description: "LC001-LC006 severity (licence audit: SPDX resolution, OSI approval, standing, drift, copyright, NOTICE): 'fail', 'warn', or 'skip'. Default 'warn'."
+    required: false
+    default: ""
+  allowed_licenses:
+    description: "Comma-separated SPDX allowlist for LC002. Empty accepts any OSI-approved licence."
+    required: false
+    default: ""
+  denied_licenses:
+    description: "Comma-separated SPDX denylist for LC002."
+    required: false
+    default: ""
+  license_catalogue_max_age_days:
+    description: "Max age in days of the vendored OSI snapshot before LC002 flags it as possibly out of date. Default 400; 0 disables."
+    required: false
+    default: ""
 outputs:
   passed:
-    description: 'Number of checks that passed.'
+    description: "Number of checks that passed."
     value: ${{ steps.check.outputs.passed }}
   failed:
-    description: 'Number of checks that failed.'
+    description: "Number of checks that failed."
     value: ${{ steps.check.outputs.failed }}
   warnings:
-    description: 'Number of warnings.'
+    description: "Number of warnings."
     value: ${{ steps.check.outputs.warnings }}
   report:
-    description: 'Newline-separated `id|status|message` rows.'
+    description: "Newline-separated `id|status|message` rows."
     value: ${{ steps.check.outputs.report }}
 
 runs:
@@ -298,54 +324,61 @@ runs:
     - id: check
       uses: ./.github/actions/check
       with:
-        use_marketplace_config:  ${{ inputs.use_marketplace_config }}
-        use_global_config:       ${{ inputs.use_global_config }}
-        global_config_path:      ${{ inputs.global_config_path }}
-        config_path:             ${{ inputs.config_path }}
-        action_yml_path:         ${{ inputs.action_yml_path }}
-        fail_on_warning:         ${{ inputs.fail_on_warning }}
-        skip_checks:             ${{ inputs.skip_checks }}
-        workflow_dir:            ${{ inputs.workflow_dir }}
-        github_token:            ${{ inputs.github_token || github.token }}
-        org_health_repo:         ${{ inputs.org_health_repo }}
-        check_org_health:        ${{ inputs.check_org_health }}
-        require_security:        ${{ inputs.require_security }}
+        use_marketplace_config: ${{ inputs.use_marketplace_config }}
+        use_global_config: ${{ inputs.use_global_config }}
+        global_config_path: ${{ inputs.global_config_path }}
+        config_path: ${{ inputs.config_path }}
+        action_yml_path: ${{ inputs.action_yml_path }}
+        fail_on_warning: ${{ inputs.fail_on_warning }}
+        skip_checks: ${{ inputs.skip_checks }}
+        workflow_dir: ${{ inputs.workflow_dir }}
+        github_token: ${{ inputs.github_token || github.token }}
+        org_health_repo: ${{ inputs.org_health_repo }}
+        check_org_health: ${{ inputs.check_org_health }}
+        require_security: ${{ inputs.require_security }}
         require_code_of_conduct: ${{ inputs.require_code_of_conduct }}
-        require_contributing:    ${{ inputs.require_contributing }}
-        require_support:         ${{ inputs.require_support }}
+        require_contributing: ${{ inputs.require_contributing }}
+        require_support: ${{ inputs.require_support }}
         require_issue_templates: ${{ inputs.require_issue_templates }}
-        require_pr_template:     ${{ inputs.require_pr_template }}
-        require_funding:         ${{ inputs.require_funding }}
+        require_pr_template: ${{ inputs.require_pr_template }}
+        require_funding: ${{ inputs.require_funding }}
         community_health_source: ${{ inputs.community_health_source }}
-        security_source:         ${{ inputs.security_source }}
-        code_of_conduct_source:  ${{ inputs.code_of_conduct_source }}
-        contributing_source:     ${{ inputs.contributing_source }}
-        support_source:          ${{ inputs.support_source }}
-        issue_templates_source:  ${{ inputs.issue_templates_source }}
-        pr_template_source:      ${{ inputs.pr_template_source }}
-        funding_source:          ${{ inputs.funding_source }}
-        auto_generate_missing:   ${{ inputs.auto_generate_missing }}
-        require_dependabot:           ${{ inputs.require_dependabot }}
-        require_codeql:               ${{ inputs.require_codeql }}
-        require_editorconfig:         ${{ inputs.require_editorconfig }}
-        require_gitattributes:        ${{ inputs.require_gitattributes }}
-        require_gitignore:            ${{ inputs.require_gitignore }}
-        require_markdownlint:         ${{ inputs.require_markdownlint }}
-        require_yamllint:             ${{ inputs.require_yamllint }}
-        require_ghas_code_scanning:   ${{ inputs.require_ghas_code_scanning }}
+        security_source: ${{ inputs.security_source }}
+        code_of_conduct_source: ${{ inputs.code_of_conduct_source }}
+        contributing_source: ${{ inputs.contributing_source }}
+        support_source: ${{ inputs.support_source }}
+        issue_templates_source: ${{ inputs.issue_templates_source }}
+        pr_template_source: ${{ inputs.pr_template_source }}
+        funding_source: ${{ inputs.funding_source }}
+        auto_generate_missing: ${{ inputs.auto_generate_missing }}
+        require_dependabot: ${{ inputs.require_dependabot }}
+        require_codeql: ${{ inputs.require_codeql }}
+        require_editorconfig: ${{ inputs.require_editorconfig }}
+        require_gitattributes: ${{ inputs.require_gitattributes }}
+        require_gitignore: ${{ inputs.require_gitignore }}
+        require_markdownlint: ${{ inputs.require_markdownlint }}
+        require_yamllint: ${{ inputs.require_yamllint }}
+        require_ghas_code_scanning: ${{ inputs.require_ghas_code_scanning }}
         require_ghas_secret_scanning: ${{ inputs.require_ghas_secret_scanning }}
-        require_dependabot_alerts:    ${{ inputs.require_dependabot_alerts }}
-        require_security_devops:      ${{ inputs.require_security_devops }}
-        require_scorecard:            ${{ inputs.require_scorecard }}
-        require_repo_description:     ${{ inputs.require_repo_description }}
-        require_repo_homepage:        ${{ inputs.require_repo_homepage }}
-        require_repo_topics:          ${{ inputs.require_repo_topics }}
-        repo_description_max_length:  ${{ inputs.repo_description_max_length }}
-        repo_description_min_length:  ${{ inputs.repo_description_min_length }}
-        enable_ai_findings_summary:   ${{ inputs.enable_ai_findings_summary }}
+        require_dependabot_alerts: ${{ inputs.require_dependabot_alerts }}
+        require_security_devops: ${{ inputs.require_security_devops }}
+        require_scorecard: ${{ inputs.require_scorecard }}
+        require_sponsorship: ${{ inputs.require_sponsorship }}
+        sponsorship_account: ${{ inputs.sponsorship_account }}
+        require_repo_description: ${{ inputs.require_repo_description }}
+        require_repo_homepage: ${{ inputs.require_repo_homepage }}
+        require_repo_topics: ${{ inputs.require_repo_topics }}
+        require_repo_issues: ${{ inputs.require_repo_issues }}
+        repo_description_max_length: ${{ inputs.repo_description_max_length }}
+        repo_description_min_length: ${{ inputs.repo_description_min_length }}
+        require_license_audit: ${{ inputs.require_license_audit }}
+        allowed_licenses: ${{ inputs.allowed_licenses }}
+        denied_licenses: ${{ inputs.denied_licenses }}
+        license_catalogue_max_age_days: ${{ inputs.license_catalogue_max_age_days }}
+        enable_ai_findings_summary: ${{ inputs.enable_ai_findings_summary }}
         ai_findings_summary_provider: ${{ inputs.ai_findings_summary_provider }}
-        ai_model:                     ${{ inputs.ai_model }}
-        local_heuristic_fallback:     ${{ inputs.local_heuristic_fallback }}
-        profile:                      ${{ inputs.profile }}
-        enable_security_scan:         ${{ inputs.enable_security_scan }}
-        defer_to_code_scanning_kit:   ${{ inputs.defer_to_code_scanning_kit }}
+        ai_model: ${{ inputs.ai_model }}
+        local_heuristic_fallback: ${{ inputs.local_heuristic_fallback }}
+        profile: ${{ inputs.profile }}
+        enable_security_scan: ${{ inputs.enable_security_scan }}
+        defer_to_code_scanning_kit: ${{ inputs.defer_to_code_scanning_kit }}

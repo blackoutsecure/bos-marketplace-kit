@@ -3,7 +3,20 @@
 # Uncomment and fill in the platforms you actually use. GitHub
 # surfaces this as the "Sponsor" button on the repository.
 #
+# GitHub reads this file from `.github/FUNDING.yml` on the default
+# branch, and from nowhere else — root and `docs/` copies are honoured
+# for other community-health files but ignored for funding. The same
+# path in the owner's public `.github` repo (`{{owner}}/.github`,
+# personal account or org) supplies the default for every repo of that
+# account that has none of its own; a repo-level file overrides it
+# rather than merging.
+#
 # Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# The `github:` entry only renders once GitHub Sponsors is approved for
+# that account. Request approval first:
+#   personal account — https://docs.github.com/sponsors/receiving-sponsorships-through-github-sponsors/setting-up-github-sponsors-for-your-personal-account
+#   organization     — https://docs.github.com/sponsors/receiving-sponsorships-through-github-sponsors/setting-up-github-sponsors-for-your-organization
 
 # github: ["{{owner}}"]
 # patreon: your-handle

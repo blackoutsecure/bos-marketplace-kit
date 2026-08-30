@@ -19,76 +19,75 @@ previews, and a local CLI that runs the same checks offline.
 
 ## ✨ Features
 
-* **Layered JSON config** — bundled Marketplace best practices are merged with
+- **Layered JSON config** — bundled Marketplace best practices are merged with
   an optional organization config and an optional repository config. Zero
   configuration gets you the recommended posture; one file changes it for a
   whole org.
-* **40+ rules across ten families** — `MP###` Marketplace requirements, `OP###`
+- **50+ rules across a dozen families** — `MP###` Marketplace requirements, `OP###`
   operational polish, `SC###` security hygiene, `CH###` community health,
-  `DP###`/`CQ###`/`LT###` supply-chain and lint config, `GH###` Advanced
-  Security toggles, `MS###`/`SR###` opt-in scanners, and `RM###` live repo
-  *About* box. Every rule's severity is `fail`, `warn`, or `skip`.
-* **Org-aware community health** — each `CH###`/`SC###` rule can require a file
+  `LC###` licence audit, `DP###`/`CQ###`/`LT###` supply-chain and lint config,
+  `GH###` Advanced Security toggles, `MS###`/`SR###` opt-in scanners, `SP###`
+  GitHub Sponsors, and `RM###` live repo settings. Every rule's severity is
+  `fail`, `warn`, or `skip`.
+- **Org-aware community health** — each `CH###`/`SC###` rule can require a file
   `local`ly, `inherit` it from your org `.github` repo, or accept `either`.
-* **Publish-surface guard + promoter** — `guard` blocks PRs that touch
+- **Publish-surface guard + promoter** — `guard` blocks PRs that touch
   `action.yml`, `dist/**`, or anything else on your Marketplace surface;
   `promote` wipe-and-replays an allowlisted file set from `dev` to `main`,
   then tags and releases.
-* **AI-assisted remediation** — findings are summarised with GitHub Models
+- **AI-assisted remediation** — findings are summarised with GitHub Models
   when a usable token is present, or any OpenAI-compatible provider, and
   always fall back to deterministic local remediation. Disable with
   `enable_ai_findings_summary: false`.
-* **Independent package metadata** — package identity stays available even
-  when repository policy is absent, overridden, or failed to load.
-* **Job summary** — every run writes a markdown report of the resolved
+- **Job summary** — every run writes a markdown report of the resolved
   configuration, per-rule results, and the remediation summary.
-* **Pure-stdlib Python core** — the config resolver, AI layer, and CLI need
+- **Pure-stdlib Python core** — the config resolver, AI layer, and CLI need
   nothing beyond the standard library (`PyYAML` only for manifest parsing).
   The composite runs its bundled source directly, with no package install.
 
 ## 📖 Table of Contents
 
-* [Blackout Secure Marketplace Kit](#blackout-secure-marketplace-kit)
-  * [✨ Features](#-features)
-  * [📖 Table of Contents](#-table-of-contents)
-  * [📋 Prerequisites](#-prerequisites)
-  * [🚀 Quick start](#-quick-start)
-    * [Version pinning](#version-pinning)
-    * [AI triage and data handling](#ai-triage-and-data-handling)
-  * [⚙️ Action inputs](#️-action-inputs)
-  * [📤 Action outputs](#-action-outputs)
-  * [🧰 What's in the box](#-whats-in-the-box)
-  * [🏗️ Configuration inheritance and layering](#️-configuration-inheritance-and-layering)
-    * [Composing with bos-code-scanning-kit](#composing-with-bos-code-scanning-kit)
-    * [Posture profiles](#posture-profiles)
-  * [📦 Package metadata](#-package-metadata)
-  * [✅ Check rule catalogue](#-check-rule-catalogue)
-  * [🚢 Publishing to Marketplace](#-publishing-to-marketplace)
-    * [Release model: immutable tags + a human review gate](#release-model-immutable-tags--a-human-review-gate)
-  * [🧪 Examples](#-examples)
-  * [💻 Local usage (CLI)](#-local-usage-cli)
-  * [⚠️ Runtime and repository notes](#️-runtime-and-repository-notes)
-  * [🔐 Security](#-security)
-  * [🏷️ Versioning](#️-versioning)
-  * [🤝 Contributing](#-contributing)
-  * [📜 License](#-license)
+- [Blackout Secure Marketplace Kit](#blackout-secure-marketplace-kit)
+  - [✨ Features](#-features)
+  - [📖 Table of Contents](#-table-of-contents)
+  - [📋 Prerequisites](#-prerequisites)
+  - [🚀 Quick start](#-quick-start)
+    - [Version pinning](#version-pinning)
+    - [AI triage and data handling](#ai-triage-and-data-handling)
+  - [⚙️ Action inputs](#️-action-inputs)
+  - [📤 Action outputs](#-action-outputs)
+  - [🧰 What's in the box](#-whats-in-the-box)
+  - [🏗️ Configuration inheritance and layering](#️-configuration-inheritance-and-layering)
+    - [Composing with bos-code-scanning-kit](#composing-with-bos-code-scanning-kit)
+    - [Posture profiles](#posture-profiles)
+  - [📦 Package metadata](#-package-metadata)
+  - [✅ Check rule catalogue](#-check-rule-catalogue)
+  - [🚢 Publishing to Marketplace](#-publishing-to-marketplace)
+    - [Release model: immutable tags + a human review gate](#release-model-immutable-tags--a-human-review-gate)
+  - [🧪 Examples](#-examples)
+  - [💻 Local usage (CLI)](#-local-usage-cli)
+  - [⚠️ Runtime and repository notes](#️-runtime-and-repository-notes)
+  - [🔐 Security](#-security)
+  - [🏷️ Versioning](#️-versioning)
+  - [🤝 Contributing](#-contributing)
+  - [📜 License](#-license)
 
 ## 📋 Prerequisites
 
-* **GitHub-hosted Linux runner** (`ubuntu-latest` or newer). The action
+- **GitHub-hosted Linux runner** (`ubuntu-latest` or newer). The action
   installs `actionlint` itself and verifies it against a pinned SHA-256 for
   the runner's architecture.
-* **`actions/checkout` before the kit runs**, so there is a working tree to
+- **`actions/checkout` before the kit runs**, so there is a working tree to
   validate.
-* **`contents: read`** is enough for the manifest, community-health, and lint
+- **`contents: read`** is enough for the manifest, community-health, and lint
   rules.
-* **A token** for the `CH###` org-health lookups, the `GH###` Advanced
-  Security probes, and the `RM###` *About* box rules. The default
+- **A token** for the `CH###` org-health lookups, the `GH###` Advanced
+  Security probes, and the `RM###` _About_ box rules. The default
   `${{ github.token }}` covers `RM###` and the org-health lookup; `GH003`
   (Dependabot alerts) is admin-scoped and needs a PAT.
-* **`models: read`** only if you want the AI remediation summary. Without it
+- **`models: read`** only if you want the AI remediation summary. Without it
   the kit silently uses local remediation.
-* **Python 3.10+** for the optional local CLI.
+- **Python 3.10+** for the optional local CLI.
 
 ## 🚀 Quick start
 
@@ -126,11 +125,11 @@ For the local CLI, see [💻 Local usage (CLI)](#-local-usage-cli).
 Pick a `uses:` ref shape based on how strict your supply-chain posture needs
 to be. All three forms are supported equally.
 
-| Form | Example | When to use |
-|------|---------|-------------|
-| Floating major (default) | `blackoutsecure/bos-marketplace-kit@v1` | Friendly default. Auto-tracks every `v1.x.y` release as we ship fixes and new rules. Recommended for most callers. |
-| Immutable tag | `blackoutsecure/bos-marketplace-kit@v1.0.0` | Pin to a specific release. Identical rule results across runs; requires manual bumps. Recommended when a new rule turning `warn` would break a pipeline. |
-| SHA-pinned | `blackoutsecure/bos-marketplace-kit@<40-char-sha> # v1.0.0` | Strictest. Survives even a malicious tag-move on this repo. Recommended for regulated / high-security callers. Use Dependabot's `package-ecosystem: github-actions` to keep the pin current. |
+| Form                     | Example                                                     | When to use                                                                                                                                                                                  |
+| ------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Floating major (default) | `blackoutsecure/bos-marketplace-kit@v1`                     | Friendly default. Auto-tracks every `v1.x.y` release as we ship fixes and new rules. Recommended for most callers.                                                                           |
+| Immutable tag            | `blackoutsecure/bos-marketplace-kit@v1.0.0`                 | Pin to a specific release. Identical rule results across runs; requires manual bumps. Recommended when a new rule turning `warn` would break a pipeline.                                     |
+| SHA-pinned               | `blackoutsecure/bos-marketplace-kit@<40-char-sha> # v1.0.0` | Strictest. Survives even a malicious tag-move on this repo. Recommended for regulated / high-security callers. Use Dependabot's `package-ecosystem: github-actions` to keep the pin current. |
 
 The SHA for any tag is `git rev-list -n 1 v1.0.0` against this repo, or the
 `commit` field of the GitHub Release JSON.
@@ -159,11 +158,11 @@ global or repo config:
 }
 ```
 
-| Provider | Selected when | Credentials |
-|----------|---------------|-------------|
+| Provider        | Selected when                           | Credentials                                                                                                                               |
+| --------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `github-models` | `auto` (first choice) or set explicitly | `GITHUB_MODELS_TOKEN`, else the workflow `GITHUB_TOKEN`. Optional `GITHUB_MODELS_ENDPOINT` / `GITHUB_MODELS_MODEL`. Needs `models: read`. |
-| `external` | `auto` (fallback) or set explicitly | `OPENAI_API_KEY` **and** `OPENAI_API_ENDPOINT` (any OpenAI-compatible endpoint). Optional `OPENAI_API_MODEL`. |
-| `none` | Set explicitly | — |
+| `external`      | `auto` (fallback) or set explicitly     | `OPENAI_API_KEY` **and** `OPENAI_API_ENDPOINT` (any OpenAI-compatible endpoint). Optional `OPENAI_API_MODEL`.                             |
+| `none`          | Set explicitly                          | —                                                                                                                                         |
 
 Endpoints must be `https`. A token without model access is treated as
 unavailable; it does not fail the scan. Keep credentials in Actions secrets
@@ -178,7 +177,7 @@ is reachable.
 
 These are the inputs of the root action, which delegates to
 `.github/actions/check`. Every policy input defaults to `''` (or `auto`),
-meaning *take the value from the [config cascade](#️-configuration-inheritance-and-layering)*.
+meaning _take the value from the [config cascade](#️-configuration-inheritance-and-layering)_.
 
 <!-- BEGIN GENERATED: action-inputs -->
 
@@ -209,7 +208,7 @@ meaning *take the value from the [config cascade](#️-configuration-inheritance
 | `support_source` | (config) | CH003 source override (or empty to use global). |
 | `issue_templates_source` | (config) | CH004 source override (or empty to use global). |
 | `pr_template_source` | (config) | CH005 source override (or empty to use global). |
-| `funding_source` | (config) | CH006 source override (or empty to use global). |
+| `funding_source` | (config) | CH006/SP002 source override (or empty to use global). |
 | `auto_generate_missing` | (config) | [FUTURE] When `true`, use an LLM to draft missing community-health files and open a PR. Stub today; reserved for a future release. |
 | `profile` | (config) | `baseline` (default) or `strict` — see the README config schema. |
 | `enable_security_scan` | (config) | Run the security-posture rule families (SC/CQ/GH/MS/SR). Default `true`. |
@@ -230,11 +229,18 @@ meaning *take the value from the [config cascade](#️-configuration-inheritance
 | `require_dependabot_alerts` | (config) | GH003 severity: 'fail', 'warn', or 'skip'. |
 | `require_security_devops` | (config) | MS001 severity: 'fail', 'warn', or 'skip'. |
 | `require_scorecard` | (config) | SR001 severity: 'fail', 'warn', or 'skip'. |
+| `require_sponsorship` | (config) | SP001/SP002/SP003 severity (GitHub Sponsors listing approved, wired into FUNDING.yml, and rendering): 'fail', 'warn', or 'skip'. |
+| `sponsorship_account` | (config) | Login to check for a sponsors listing (SP001). Empty uses the repository owner. |
 | `require_repo_description` | (config) | RM001/RM002 severity (repo About-box description): 'fail', 'warn', or 'skip'. |
 | `require_repo_homepage` | (config) | RM003 severity (repo About-box homepage URL): 'fail', 'warn', or 'skip'. Malformed URLs always fail. |
 | `require_repo_topics` | (config) | RM004/RM005 severity (repo About-box topics): 'fail', 'warn', or 'skip'. Format violations and >20 topics always fail. |
+| `require_repo_issues` | (config) | RM006 severity (repo Issues tab enabled): 'fail', 'warn', or 'skip'. |
 | `repo_description_max_length` | (config) | Hard upper bound for the repo description (RM002). Default 350 (GitHub limit). |
 | `repo_description_min_length` | (config) | Lower bound below which the repo description triggers a warning (RM002). Default 30. Set 0 to disable. |
+| `require_license_audit` | (config) | LC001-LC006 severity (licence audit: SPDX resolution, OSI approval, standing, drift, copyright, NOTICE): 'fail', 'warn', or 'skip'. Default 'warn'. |
+| `allowed_licenses` | (config) | Comma-separated SPDX allowlist for LC002. Empty accepts any OSI-approved licence. |
+| `denied_licenses` | (config) | Comma-separated SPDX denylist for LC002. |
+| `license_catalogue_max_age_days` | (config) | Max age in days of the vendored OSI snapshot before LC002 flags it as possibly out of date. Default 400; 0 disables. |
 
 <!-- END GENERATED: action-inputs -->
 
@@ -271,19 +277,19 @@ enabled — and `2` on a configuration error.
 
 Publishing on the Marketplace has rules that are easy to miss:
 
-* `action.yml` must be at the root of the default branch.
-* The default branch should contain only what the action needs. GitHub does
+- `action.yml` must be at the root of the default branch.
+- The default branch should contain only what the action needs. GitHub does
   **not** forbid `.github/workflows/*` there — see
   [Marketplace requirements vs. kit policy](#marketplace-requirements-vs-kit-policy).
-* The `name:` field has four sub-rules (unique, not a user/org, not a
+- The `name:` field has four sub-rules (unique, not a user/org, not a
   category, not a reserved feature).
-* `branding.icon` must come from a specific snapshot of Feather Icons.
-* `branding.color` must be one of nine allowed values.
-* Verified Creator status requires manual outreach.
+- `branding.icon` must come from a specific snapshot of Feather Icons.
+- `branding.color` must be one of nine allowed values.
+- Verified Creator status requires manual outreach.
 
 You can't catch any of this until your release pipeline runs (or worse,
 until your listing rejects the publish). This kit catches all of it
-*before* the PR merges.
+_before_ the PR merges.
 
 ```
 bos-marketplace-kit/
@@ -313,32 +319,29 @@ bos-marketplace-kit/
 ### Inclusion vs. exclusion: how `promote` decides what ships
 
 `promote` is **inclusion-first, not exclusion-first**: you name an
-`allowlist_paths` (+ optional `extra_allowlist_paths`), and *every
-other path on `main` is removed on every run* — there is no additive
-mode. That single rule already gives you both directions the naive
-"exclude a list of files" model would need:
+`allowlist_paths` (+ optional `extra_allowlist_paths`), and _every
+other path on `main` is removed on every run_ — there is no additive
+mode. That single rule covers both directions:
 
-* **"Don't ship this"** → simply never add it to the allowlist. It
-  can exist on `dev` (tests, fixtures, internal docs, CI config) and
-  will never reach `main`.
-* **"It shouldn't be there — remove it if it ever shows up"** → this
-  is what wipe-and-replay already does for free. Anything not on the
-  allowlist that somehow lands on `main` (a manual push, a stale
-  commit, a merged PR that bypassed `guard`) is deleted on the very
-  next promote. You do not need a separate "exclusion" config for
-  this — it is the *default* behavior, not an opt-in.
+- **"Don't ship this"** → never add it to the allowlist. It can exist
+  on `dev` (tests, fixtures, internal docs, CI config) and will never
+  reach `main`.
+- **"Remove it if it ever shows up"** → wipe-and-replay does this for
+  free. Anything not on the allowlist that lands on `main` (a manual
+  push, a stale commit, a merged PR that bypassed `guard`) is deleted
+  on the next promote. No separate "exclusion" config needed.
 
 Two built-in safety nets sit on top of that default, both enforced
 inside `promote` itself so they apply no matter how a caller invokes
 it:
 
 1. **Hard-blocked `.github/workflows/**`** — a GitHub Marketplace
-   publishing prerequisite (see [Marketplace requirements vs. kit
-   policy](#marketplace-requirements-vs-kit-policy)). Listing it
-   directly is a fatal error; pulling it in transitively via a parent
-   directory (e.g. bare `.github`) is silently stripped with a
-   `::notice`.
-2. **Recommended denylist (`extra_deny_patterns`)** — a *non-fatal*,
+publishing prerequisite (see [Marketplace requirements vs. kit
+policy](#marketplace-requirements-vs-kit-policy)). Listing it
+directly is a fatal error; pulling it in transitively via a parent
+directory (e.g. bare `.github`) is silently stripped with a
+`::notice`.
+2. **Recommended denylist (`extra_deny_patterns`)** — a _non-fatal_,
    built-in set of dev-only/noise/secret-shaped basenames
    (`__pycache__`, `.pytest_cache`, `.ruff_cache`, `.mypy_cache`,
    `.tox`, `node_modules`, `.DS_Store`, `.venv`, `venv`, `.env`,
@@ -354,7 +357,7 @@ it:
    block and the recommended denylist strip are logged and surfaced
    as action outputs (`removed_violations`,
    `removed_recommended_exclusions`) so the job summary always shows
-   *what* was removed and *why*.
+   _what_ was removed and _why_.
 
 Net effect: you configure **one list** (what ships), not two
 (what ships minus what's excluded minus what's re-excluded-if-it-
@@ -367,23 +370,23 @@ wipe-and-replay model automatically.
 
 The kit ships **two** kinds of automation, and they answer different questions:
 
-| | `.github/actions/*` (composites) | `scripts/*.sh` (operator one-shots) |
-|---|---|---|
-| **Runs where?** | Inside a workflow, on every PR / push / release. | On your laptop, once per repo. |
-| **Auth?** | `GITHUB_TOKEN` (limited — `contents: read`, `pull-requests: write`, etc.). | Operator's `gh auth login` token, often with `admin:org` scope. |
+|                  | `.github/actions/*` (composites)                                                                                  | `scripts/*.sh` (operator one-shots)                                                     |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Runs where?**  | Inside a workflow, on every PR / push / release.                                                                  | On your laptop, once per repo.                                                          |
+| **Auth?**        | `GITHUB_TOKEN` (limited — `contents: read`, `pull-requests: write`, etc.).                                        | Operator's `gh auth login` token, often with `admin:org` scope.                         |
 | **What it does** | Recurring, idempotent checks: validate manifest, lint, drift-detect branch protection, guard the publish surface. | Privileged bootstrap: create an org-level ruleset, configure classic branch protection. |
-| **Failure mode** | A red ❌ on the PR / commit. | A loud `exit 1` in the operator's terminal. |
-| **Frequency** | Every event. | Once, then forget — until your release-bot rotates. |
+| **Failure mode** | A red ❌ on the PR / commit.                                                                                      | A loud `exit 1` in the operator's terminal.                                             |
+| **Frequency**    | Every event.                                                                                                      | Once, then forget — until your release-bot rotates.                                     |
 
-Rule of thumb: if a maintainer needs to *re-grant* a scope to make
+Rule of thumb: if a maintainer needs to _re-grant_ a scope to make
 it work, it lives in `scripts/`. Everything else is a composite.
 
 ### A note on the bundled helpers
 
 Two composites ship inline Python helpers next to their `action.yml`:
 
-* `branch-protection/_bp.py` — drift detection + payload builder.
-* `repo-metadata/helper.py` — README prose extraction, description
+- `branch-protection/_bp.py` — drift detection + payload builder.
+- `repo-metadata/helper.py` — README prose extraction, description
   clamping, GitHub-valid topic sanitization.
 
 Neither helper is part of the PyPI package — they live next to their
@@ -455,26 +458,27 @@ so a standalone `marketplace-kit.json` can be flat. Unknown keys are
 ignored, so a newer kit can extend the schema without breaking older
 callers.
 
-| Key | Type | Notes |
-|-----|------|-------|
-| `use_marketplace_config` | boolean | Default `true`. `false` drops the built-in best-practice tier. |
-| `use_marketplace_skip_checks` | boolean | Default `true` — `skip_checks` appends across tiers. `false` replaces the inherited list. |
-| `action_yml_path` | string | Repo-relative. Absolute paths and `..` are rejected. |
-| `fail_on_warning` | boolean | Treat OP### warnings as failures. |
-| `skip_checks` | array or string | Rule IDs to skip, e.g. `["OP003", "SC002"]`. |
-| `workflow_dir` | string | `""` skips workflow linting. |
-| `check_org_health` / `org_health_repo` | boolean / string | Org `.github` fallback lookup. |
-| `community_health_source` | string | `local`, `inherit`, or `either`. |
-| `require_*` | string | `fail`, `warn`, or `skip` — one per CH/SC/DP/CQ/LT/GH/MS/SR/RM rule. |
-| `*_source` | string | Per-rule override of `community_health_source`. |
-| `repo_description_max_length` / `repo_description_min_length` | integer | RM002 bounds. |
-| `enable_ai_findings_summary` | boolean | Default `true`. `false` prohibits every model call. |
-| `ai_findings_summary_provider` | string | `auto`, `none`, `github-models`, or `external`. |
-| `ai_model` | string | Model identifier. `auto` selects the optimized model for the task. |
-| `local_heuristic_fallback` | boolean | Default `true`. Emit deterministic remediation when no model is used. |
-| `profile` | string | `baseline` (default) or `strict`. See [Posture profiles](#posture-profiles). |
-| `enable_security_scan` | boolean | Default `true`. `false` skips the whole security-posture rule group. |
-| `defer_to_code_scanning_kit` | `auto` / boolean | Default `auto`. Skip rules owned by `bos-code-scanning-kit`. |
+| Key                                                           | Type             | Notes                                                                                     |
+| ------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------- |
+| `use_marketplace_config`                                      | boolean          | Default `true`. `false` drops the built-in best-practice tier.                            |
+| `use_marketplace_skip_checks`                                 | boolean          | Default `true` — `skip_checks` appends across tiers. `false` replaces the inherited list. |
+| `action_yml_path`                                             | string           | Repo-relative. Absolute paths and `..` are rejected.                                      |
+| `fail_on_warning`                                             | boolean          | Treat OP### warnings as failures.                                                         |
+| `skip_checks`                                                 | array or string  | Rule IDs to skip, e.g. `["OP003", "SC002"]`.                                              |
+| `workflow_dir`                                                | string           | `""` skips workflow linting.                                                              |
+| `check_org_health` / `org_health_repo`                        | boolean / string | Org `.github` fallback lookup.                                                            |
+| `community_health_source`                                     | string           | `local`, `inherit`, or `either`.                                                          |
+| `require_*`                                                   | string           | `fail`, `warn`, or `skip` — one per CH/SC/DP/CQ/LT/GH/MS/SR/SP/RM rule.                   |
+| `*_source`                                                    | string           | Per-rule override of `community_health_source`.                                           |
+| `sponsorship_account`                                         | string           | Login checked by SP001/SP002. Empty uses the repository owner.                            |
+| `repo_description_max_length` / `repo_description_min_length` | integer          | RM002 bounds.                                                                             |
+| `enable_ai_findings_summary`                                  | boolean          | Default `true`. `false` prohibits every model call.                                       |
+| `ai_findings_summary_provider`                                | string           | `auto`, `none`, `github-models`, or `external`.                                           |
+| `ai_model`                                                    | string           | Model identifier. `auto` selects the optimized model for the task.                        |
+| `local_heuristic_fallback`                                    | boolean          | Default `true`. Emit deterministic remediation when no model is used.                     |
+| `profile`                                                     | string           | `baseline` (default) or `strict`. See [Posture profiles](#posture-profiles).              |
+| `enable_security_scan`                                        | boolean          | Default `true`. `false` skips the whole security-posture rule group.                      |
+| `defer_to_code_scanning_kit`                                  | `auto` / boolean | Default `auto`. Skip rules owned by `bos-code-scanning-kit`.                              |
 
 Values are validated before any check runs: a bad enum, a negative
 length, or a path escaping the repo fails the step with exit code `2`
@@ -540,12 +544,12 @@ workflow in your repo already calls
 this kit **defers** those rules to it rather than double-reporting the same
 control on the Security tab and in two job summaries.
 
-| This kit | Code-scanning kit | Who wins by default |
-|----------|-------------------|---------------------|
-| `GH001` code scanning enabled | `PS001` | code-scanning kit (probes Default **and** Advanced setup) |
-| `GH002` secret scanning enabled | `PS002` | code-scanning kit |
-| `GH003` Dependabot alerts enabled | `PS003` | code-scanning kit |
-| `MS001` Security DevOps workflow | `PS013` | code-scanning kit |
+| This kit                          | Code-scanning kit | Who wins by default                                       |
+| --------------------------------- | ----------------- | --------------------------------------------------------- |
+| `GH001` code scanning enabled     | `PS001`           | code-scanning kit (probes Default **and** Advanced setup) |
+| `GH002` secret scanning enabled   | `PS002`           | code-scanning kit                                         |
+| `GH003` Dependabot alerts enabled | `PS003`           | code-scanning kit                                         |
+| `MS001` Security DevOps workflow  | `PS013`           | code-scanning kit                                         |
 
 Everything else stays here — `MP###`, `OP###`, `SC###`, `CH###`, `DP001`,
 `CQ001`, `LT###`, `SR001`, `RM###` have no code-scanning-kit equivalent. And
@@ -555,11 +559,11 @@ equivalent here, so nothing is lost by deferring.
 
 `defer_to_code_scanning_kit` controls this:
 
-| Value | Behaviour |
-|-------|-----------|
-| `auto` (default) | Defer only when a workflow in the repo references the code-scanning kit. |
-| `true` | Always defer — use it when the kit runs from an org-level workflow this repo cannot see. |
-| `false` | Never defer; run both. Useful while migrating. |
+| Value            | Behaviour                                                                                |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `auto` (default) | Defer only when a workflow in the repo references the code-scanning kit.                 |
+| `true`           | Always defer — use it when the kit runs from an org-level workflow this repo cannot see. |
+| `false`          | Never defer; run both. Useful while migrating.                                           |
 
 `auto` matches a literal `blackoutsecure/bos-code-scanning-kit` reference in
 `.github/workflows/*.y*ml`. It deliberately does **not** follow reusable
@@ -569,16 +573,9 @@ explicitly. This repository does exactly that — see
 [`.github/bos-universal-config.json`](.github/bos-universal-config.json).
 
 Deferred rules are reported as `skip` with the reason, and listed under
-**Suppressed** in `marketplace-kit config` — they are never silently dropped:
-
-```console
-$ marketplace-kit config
-## Suppressed (forced to `skip`)
-  require_ghas_code_scanning     owned by blackoutsecure/bos-code-scanning-kit (PS001)
-```
-
-So: if the code-scanning kit already covers a control, you do **not** need to
-name it in this kit's config. Leave it at the built-in default and the
+**Suppressed** in `marketplace-kit config` — they are never silently dropped.
+So if the code-scanning kit already covers a control, you do **not** need to
+name it in this kit's config; leave it at the built-in default and the
 cascade sorts it out.
 
 ### Posture profiles
@@ -587,10 +584,10 @@ cascade sorts it out.
 between the marketplace tier and your global/repo config, so you can adopt a
 profile and still relax one rule.
 
-| Profile | Meaning |
-|---------|---------|
-| `baseline` (default) | The kit's conservative recommendation. Adding the kit to an existing repo never breaks CI on day one. |
-| `strict` | The **recommended target state**. Promotes the controls that are free on public repos — `SECURITY.md`, CodeQL, Dependabot config + alerts, GHAS toggles, `.editorconfig`/`.gitattributes`/`.gitignore`, repo description and topics — from `warn` to `fail`, and turns markdownlint/yamllint/Scorecard on at `warn`. |
+| Profile              | Meaning                                                                                                                                                                                                                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `baseline` (default) | The kit's conservative recommendation. Adding the kit to an existing repo never breaks CI on day one.                                                                                                                                                                                                                |
+| `strict`             | The **recommended target state**. Promotes the controls that are free on public repos — `SECURITY.md`, CodeQL, Dependabot config + alerts, GHAS toggles, `.editorconfig`/`.gitattributes`/`.gitignore`, repo description and topics — from `warn` to `fail`, and turns markdownlint/yamllint/Scorecard on at `warn`. |
 
 ```json
 {
@@ -625,12 +622,12 @@ not touch `MP###`, `OP###`, `CH###`, `LT###`, or `RM###`.
 
 ### Config inputs on the action
 
-| Input | Default | Meaning |
-|-------|---------|---------|
-| `use_marketplace_config` | `auto` | `auto` honours the config files; `true`/`false` force the built-in tier on or off. |
-| `use_global_config` | `auto` | `auto` loads the global config when present; `true` requires it; `false` disables discovery. |
-| `global_config_path` | (conventional) | Override the global config path. |
-| `config_path` | (auto-discovered) | Override the repo config path. |
+| Input                    | Default           | Meaning                                                                                      |
+| ------------------------ | ----------------- | -------------------------------------------------------------------------------------------- |
+| `use_marketplace_config` | `auto`            | `auto` honours the config files; `true`/`false` force the built-in tier on or off.           |
+| `use_global_config`      | `auto`            | `auto` loads the global config when present; `true` requires it; `false` disables discovery. |
+| `global_config_path`     | (conventional)    | Override the global config path.                                                             |
+| `config_path`            | (auto-discovered) | Override the repo config path.                                                               |
 
 Configuration is pure data: the resolver is stdlib Python, makes no
 network calls, and never evaluates config content. Package identity is
@@ -675,12 +672,12 @@ policy. Ignoring or overriding policy does not remove package identity.
 Three claims are commonly conflated. Per
 [GitHub's publishing docs](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace):
 
-| Claim | Verdict | Detail |
-|-------|---------|--------|
-| `action.yml` must be at the repo root of the default branch | **GitHub requirement** | Enforced by `MP007`. |
-| A repo may contain only one action | **Partly** — one *listed* action. Sub-folder manifests are explicitly allowed, they just are not listed. | This is why the kit's nine composites live under `.github/actions/**`. |
-| The default branch must not contain `.github/workflows/**` | **Not a GitHub rule.** | The docs only ask that the repo contain "the metadata file, code, and files necessary for the action". Keeping workflows off `main` is *this kit's policy*, implemented by `promote` + `guard`. |
-| A composite action may `uses:` another action | **Allowed** since composite `uses:` support shipped in 2021. | Nested `uses:` must still be SHA-pinned (`SC002`). |
+| Claim                                                       | Verdict                                                                                                  | Detail                                                                                                                                                                                          |
+| ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `action.yml` must be at the repo root of the default branch | **GitHub requirement**                                                                                   | Enforced by `MP007`.                                                                                                                                                                            |
+| A repo may contain only one action                          | **Partly** — one _listed_ action. Sub-folder manifests are explicitly allowed, they just are not listed. | This is why the kit's nine composites live under `.github/actions/**`.                                                                                                                          |
+| The default branch must not contain `.github/workflows/**`  | **Not a GitHub rule.**                                                                                   | The docs only ask that the repo contain "the metadata file, code, and files necessary for the action". Keeping workflows off `main` is _this kit's policy_, implemented by `promote` + `guard`. |
+| A composite action may `uses:` another action               | **Allowed** since composite `uses:` support shipped in 2021.                                             | Nested `uses:` must still be SHA-pinned (`SC002`).                                                                                                                                              |
 
 The practical consequence: the `dev` → `main` promote model is a **hardening
 choice**, not a publishing prerequisite. It keeps the published surface
@@ -696,8 +693,8 @@ The root [`action.yml`](action.yml) is a thin pass-through to
 `.github/actions/check`. That is deliberate, and it is the only shape that
 satisfies both constraints at once:
 
-* Marketplace lists exactly one manifest, and it must be at the root.
-* The check logic is ~500 lines of manifest plus a 900-line `run.sh`, shared
+- Marketplace lists exactly one manifest, and it must be at the root.
+- The check logic is ~500 lines of manifest plus a 900-line `run.sh`, shared
   with callers who address the nested composite directly.
 
 Duplicating the manifest at the root would create two sources of truth for 50
@@ -705,17 +702,17 @@ inputs. Delegation keeps one. The cost is one extra step in the job log.
 
 ### Action roster review
 
-| Composite | Keep? | Rationale |
-|-----------|-------|-----------|
-| `check` | ✅ | The listed surface. Everything else is opt-in. |
-| `guard` | ✅ | Distinct trigger (`pull_request`) and permissions from `check`; no overlap. |
-| `promote` | ✅ | Release-time, `contents: write`. Cannot merge into `check`. |
-| `name-check` | ✅ | Network calls to github.com; deliberately not in the PR path. |
-| `branding-preview` | ✅ | Writes a PR comment; different permission set. |
-| `dist-check` | ✅ | Only meaningful for bundled JS actions. Correctly opt-in. |
-| `lint` | ✅ | Orchestrates markdownlint/yamllint/shellcheck/actionlint. Overlaps `bos-code-scanning-kit`'s actionlint + shellcheck stage — prefer that kit when both are installed. |
-| `branch-protection` | ⚠️ | Overlaps `PS020`–`PS025`. This one *applies* settings; the code-scanning kit only *audits* them. Keep both; do not run them against each other's expectations. |
-| `repo-metadata` | ✅ | Writes the About box; the `RM###` rules audit it. Read/write pair, not a duplicate. |
+| Composite           | Keep? | Rationale                                                                                                                                                             |
+| ------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`             | ✅    | The listed surface. Everything else is opt-in.                                                                                                                        |
+| `guard`             | ✅    | Distinct trigger (`pull_request`) and permissions from `check`; no overlap.                                                                                           |
+| `promote`           | ✅    | Release-time, `contents: write`. Cannot merge into `check`.                                                                                                           |
+| `name-check`        | ✅    | Network calls to github.com; deliberately not in the PR path.                                                                                                         |
+| `branding-preview`  | ✅    | Writes a PR comment; different permission set.                                                                                                                        |
+| `dist-check`        | ✅    | Only meaningful for bundled JS actions. Correctly opt-in.                                                                                                             |
+| `lint`              | ✅    | Orchestrates markdownlint/yamllint/shellcheck/actionlint. Overlaps `bos-code-scanning-kit`'s actionlint + shellcheck stage — prefer that kit when both are installed. |
+| `branch-protection` | ⚠️    | Overlaps `PS020`–`PS025`. This one _applies_ settings; the code-scanning kit only _audits_ them. Keep both; do not run them against each other's expectations.        |
+| `repo-metadata`     | ✅    | Writes the About box; the `RM###` rules audit it. Read/write pair, not a duplicate.                                                                                   |
 
 No composite references an external action: `check` downloads `actionlint`
 over HTTPS and verifies it against a per-architecture SHA-256 pinned in
@@ -731,536 +728,24 @@ individual rules with the `skip_checks` input.
 
 Rule families:
 
-| Prefix  | Severity   | Failure causes |
-|---------|------------|----------------|
-| `MP###` | **Fatal**  | Marketplace publish prerequisite missing or invalid. Action would not be acceptable to GitHub. |
-| `OP###` | Warning    | Best-practice violation. Non-fatal by default; set `fail_on_warning: true` to promote. |
-| `SC###` | **Fatal**  | Security-impacting default missing. Failure indicates a supply-chain or token-exposure risk. |
-| `CH###` | Configurable | Community-health file missing. Default `warn` or `skip` per file; promote to `fail` via the matching `require_*` input. |
-| `DP###` | Configurable | Dependabot config missing. Default `warn`. |
-| `CQ###` | Configurable | CodeQL workflow missing. Default `warn`. |
-| `LT###` | Configurable | Lint config file missing (`.editorconfig`, `.gitattributes`, `.gitignore`, markdownlint, yamllint). |
-| `GH###` | Configurable | GitHub Advanced Security toggle disabled (code scanning, secret scanning, Dependabot alerts). Requires `github_token`. |
-| `MS###` | Configurable | Microsoft Security DevOps workflow missing. Default `skip` (opt-in). |
-| `SR###` | Configurable | OpenSSF Scorecard workflow missing. Default `skip` (opt-in). |
-| `RM###` | Configurable | Live repo "About" box (description, homepage, topics) missing or non-compliant. Reads `GET /repos/{owner}/{repo}` (default `GITHUB_TOKEN` is sufficient). Companion to the `repo-metadata` composite. |
-
-### MP001 — Top-level manifest keys
-
-**Required:** `name`, `description`, `runs` MUST be present at the
-root of `action.yml`. `runs:` must be a mapping containing at least
-`using:`.
-
-### MP002 — `name` is non-empty
-
-`name:` must be a non-empty string. Marketplace displays this on the
-listing card and across search results.
-
-### MP003 — `description` is non-empty
-
-`description:` is the one-line subtitle on the Marketplace card. See
-also: [MP010](#mp010--description-is-too-long).
-
-### MP004 — `runs.using` is present
-
-`runs:` must declare an execution model: `composite`, `node20` (or
-newer LTS), or `docker`. Set `runs.using: composite` for most
-shell-driven actions.
-
-### MP005 — `branding.icon` is present
-
-Marketplace requires a Feather icon name in `branding.icon`. The
-icon set is pinned to Feather v4.28.0 by GitHub. Use the kit's
-`branding-preview` action to render the resulting card before
-pushing.
-
-```yaml
-branding:
-  icon: check-circle
-  color: green
-```
-
-### MP006 — `branding.color` is in the allowed enum
-
-Allowed: `white`, `yellow`, `blue`, `green`, `orange`, `red`,
-`purple`, `gray-dark`. No hex codes, no other names.
-
-### MP007 — `action.yml` lives at the repo root
-
-Marketplace only lists a single manifest at the root of the default
-branch. Subdirectory manifests (e.g. `.github/actions/foo/action.yml`)
-are permitted in the repository but are **not** listable — GitHub's docs
-state "repositories may include other actions metadata files in
-sub-folders, but they will not be automatically listed in the
-marketplace". The `promote` action's allowlist should include
-`action.yml`.
-
-### MP008 — Name is not too short
-
-Marketplace rejects single-character action names and very short
-names that collide with reserved features. Use a name of at least 3
-characters and run the kit's `name-check` action to validate
-availability.
-
-### MP009 — Description is not too short
-
-A description shorter than 10 characters is unlikely to be useful on
-the Marketplace card and may be rejected. Expand to a complete
-sentence (~30-125 chars).
-
-### MP010 — Description is too long
-
-`description:` must be **125 characters or fewer**. Marketplace
-truncates anything past the limit in the card view, so a longer
-description ships a truncated subtitle to consumers — a hard fail by
-default. Tighten to a single short sentence; use `README.md` for
-elaboration.
-
-Enforced by both the `check` composite action and the
-`bos-marketplace-kit` CLI; cannot be downgraded to a warning.
-
-### OP003 — `author` is set
-
-Optional but strongly recommended. Marketplace shows the author on
-the listing card. Add `author: Your Org Name`.
-
-### OP004 — README has a Usage / Quickstart / Example section
-
-Marketplace consumers scan READMEs looking for a copy-pasteable
-snippet. The check looks for a heading matching
-`Usage`, `Quickstart`, `Getting Started`, or `Example` (any depth).
-Add one to your `README.md`:
-
-````markdown
-## Usage
-
-```yaml
-- uses: your-org/your-action@v1
-  with:
-    foo: bar
-```
-````
-
-### OP005 — README is a reasonable size
-
-A README under 512 bytes reads as low-effort to Marketplace
-consumers; one above 128 KB hits the GitHub-side render limit. The
-check passes when `README.md` is between 512 B and 128 KB.
-
-### OP006 — README contains at least one image or badge
-
-Listings without any visual element look notably less polished. A
-status badge (e.g. CI passing, version) or a single screenshot is
-enough. Any markdown image syntax `![alt](url)` satisfies the rule.
-
-### OP007 — README contains at least 3 fenced code blocks
-
-Marketplace consumers expect copy-pasteable snippets. The check
-counts triple-backtick fenced blocks (`` ``` ``) and warns if fewer
-than 3 are present.
-
-### SC001 — Composite actions don't interpolate user input into `run:`
-
-When a composite action interpolates `${{ inputs.* }}` or
-`${{ github.event.* }}` directly inside a `run:` block, an attacker
-who controls the input value (e.g. via a PR title) can break out of
-the shell context and execute arbitrary code on the runner. Plumb
-untrusted values via the step's `env:` block instead, then reference
-the shell variable inside the script:
-
-```yaml
-- shell: bash
-  env:
-    TITLE: ${{ github.event.pull_request.title }}
-  run: echo "$TITLE"
-```
-
-This rule is enforced by the bundled `check` composite action (which
-scans every `run:` block under `.github/actions/**`). The CLI's
-equivalent SHA-pinning rule is `SC002`.
-
-### SC002 — Third-party actions are pinned by SHA
-
-Tag/branch refs (`@v4`, `@main`) are mutable. A compromised tag move
-can inject arbitrary code into your runner. SHA pins (`@<40-hex>`)
-are immutable. Use Dependabot or `bos-upstream-watcher` to bump pins
-automatically.
-
-```yaml
-- uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-```
-
-### SC003 — Security policy is discoverable
-
-Public Marketplace listings should advertise a private reporting
-channel for security issues. The check looks for any of:
-
-* `SECURITY.md`, `.github/SECURITY.md`, or `docs/SECURITY.md` in the
-  calling repo,
-* the same files in the org's `.github` repository (when
-  `check_org_health: true` and a token is supplied), **or**
-* a README that mentions `security policy`, `SECURITY.md`, or
-  `report ... vulnerability`.
-
-Strictness is controlled by the `require_security` input:
-
-| Value  | Behaviour on a missing policy                                                                     |
-|--------|---------------------------------------------------------------------------------------------------|
-| `fail` | Hard failure — the README escape hatch is also disabled at this level.                            |
-| `warn` | **Default.** Records a warning. The action overall still passes unless `fail_on_warning: true`.   |
-| `skip` | Rule short-circuits to a `skip` status — equivalent to listing `SC003` in `skip_checks`.          |
-
-Generate a template:
-
-```bash
-marketplace-kit generate-policy security \
-  --owner my-org --repo my-action --email security@example.com
-```
-
-### CH001-CH006 — Community-health files (org-aware)
-
-The kit checks a small set of community-health files Marketplace
-consumers expect on a popular public action. Each rule looks in this
-repo first; if the file is missing, it falls back to the org's
-`.github` repository (canonical home for shared defaults) when
-`check_org_health: true` and `github_token` is non-empty. If found
-in either location the rule passes; the report message records which
-location was used.
-
-| ID    | File                                                              | Default policy | Generator kind     |
-|-------|-------------------------------------------------------------------|----------------|--------------------|
-| CH001 | `CODE_OF_CONDUCT.md` (also `.github/`, `docs/`)                   | `warn`         | `code-of-conduct`  |
-| CH002 | `CONTRIBUTING.md` (also `.github/`, `docs/`)                      | `warn`         | `contributing`     |
-| CH003 | `SUPPORT.md` (also `.github/`, `docs/`)                           | `skip`         | `support`          |
-| CH004 | `.github/ISSUE_TEMPLATE/` directory or `.github/ISSUE_TEMPLATE.md` | `skip`         | `issue-bug` / `issue-feature` |
-| CH005 | `.github/PULL_REQUEST_TEMPLATE.md`                                | `skip`         | `pr-template`      |
-| CH006 | `.github/FUNDING.yml`                                             | `skip`         | `funding`          |
-
-Each rule takes a matching `require_*` input (`require_code_of_conduct`,
-`require_contributing`, `require_support`, `require_issue_templates`,
-`require_pr_template`, `require_funding`) with values `fail | warn |
-skip` and the same semantics as `require_security` above.
-
-#### Source mode — local vs inherited from the org `.github` repo
-
-Each CH/SC rule additionally accepts a `*_source` input describing
-*where* the file is expected to live. This lets you express the
-"don't ship CoC/SECURITY/SUPPORT in every repo; inherit them from
-the org `.github` repo" pattern without losing the safety net of an
-explicit check.
-
-| Mode      | Local check | Org fallback | Pass when                                                  |
-|-----------|-------------|--------------|------------------------------------------------------------|
-| `local`   | yes         | **disabled** | the file exists in this repo.                              |
-| `inherit` | **skipped** | yes          | the file exists in `${org_health_repo}`.                   |
-| `either`  | yes         | yes          | the file exists in either location (default — back-compat). |
-
-Two layers of inputs:
-
-* **`community_health_source`** sets the global default (one of
-  `local | inherit | either`; default `either`).
-* **Per-rule overrides** — `security_source`, `code_of_conduct_source`,
-  `contributing_source`, `support_source`, `issue_templates_source`,
-  `pr_template_source`, `funding_source` — take precedence when
-  non-empty (default empty = use global).
-
-Worked example: the kit itself ships **none** of the seven
-community-health files locally — they all live in
-`blackoutsecure/.github` and inherit. The kit's [self-check
-workflow](.github/workflows/self-check.yml) wires it up like this:
-
-```yaml
-- uses: blackoutsecure/bos-marketplace-kit@v1
-  with:
-    github_token:            ${{ github.token }}
-    require_security:        warn
-    require_code_of_conduct: warn
-    require_contributing:    warn
-    require_support:         warn
-    require_funding:         warn
-    # Inherit all community-health files from the org `.github` repo:
-    community_health_source: inherit
-```
-
-A more typical consumer keeps a repo-specific `CONTRIBUTING.md`
-(local release flow, dev-loop commands, etc.) and inherits the rest
-from their org `.github` repo:
-
-```yaml
-- uses: blackoutsecure/bos-marketplace-kit@v1
-  with:
-    github_token:            ${{ github.token }}
-    require_security:        warn
-    require_code_of_conduct: warn
-    require_contributing:    warn
-    require_support:         warn
-    require_funding:         warn
-    # Default everything to inherit ...
-    community_health_source: inherit
-    # ... but keep the contributor guide local because it has
-    # repo-specific release / dev-loop content:
-    contributing_source:     local
-```
-
-When a rule's source is `inherit` and the org lookup is unavailable
-(token missing, `check_org_health: false`, or the probe fails), the
-rule emits the configured severity with an explicit reason rather
-than silently falling back. This guarantees that "inherit" never
-means "silently pass".
-
-#### Org-aware lookup
-
-Set `check_org_health: true` (default) and pass `github_token:
-${{ github.token }}` to enable the org-wide fallback. The check
-makes at most:
-
-* **one** `GET /repos/{owner}/.github` call to confirm the org
-  health repo exists, and
-* **one** `GET /repos/{owner}/.github/contents/{path}` per missing
-  file (so 0-6 additional cheap API calls per run).
-
-Override the destination repo with `org_health_repo: my-org/.github`
-if your org uses a non-default location.
-
-#### Generate a starter template
-
-The kit ships a small, opinionated set of policy templates and a CLI
-to emit them with placeholder substitution:
-
-```bash
-# List available kinds.
-marketplace-kit generate-policy list
-
-# Emit to the canonical path.
-marketplace-kit generate-policy code-of-conduct \
-  --owner my-org --repo my-action --email contact@example.com
-
-# Or just print to stdout.
-marketplace-kit generate-policy contributing --stdout
-```
-
-Placeholders: `{{owner}}`, `{{repo_name}}`, `{{contact_email}}`,
-`{{project_name}}`. Unsubstituted placeholders fall back to
-conservative defaults (`YOUR-ORG`, CWD basename,
-`security@example.com`).
-
-#### Install one (or every) recommended file
-
-`generate-policy` is the low-level emitter. `install` is the safe
-one-shot scaffolder you reach for when bootstrapping a fresh repo
-— it writes to canonical paths, refuses to overwrite existing files
-by default, and can install every recommended kind in one call:
-
-```bash
-# Scaffold a single kind at its canonical path. Refuses to
-# overwrite an existing file — pass --force to replace it.
-marketplace-kit install codeql-workflow --owner my-org
-
-# Install every recommended community-health, supply-chain, and
-# lint file that isn't already present. Existing files are left
-# alone (use --force to overwrite all). Use --dry-run to preview.
-marketplace-kit install --all --owner my-org
-
-# Preview without touching anything.
-marketplace-kit install --all --owner my-org --dry-run
-```
-
-What `install --all` covers: `security`, `code-of-conduct`,
-`contributing`, `support`, `issue-bug`, `issue-feature`,
-`pr-template`, `funding`, `dependabot`, `codeql-workflow`,
-`markdownlint`, `yamllint`. Opt-in kinds (`scorecard-workflow`,
-`security-devops-workflow`, `shellcheckrc`) must be installed
-explicitly by name to avoid surprising consumers who don't want them.
-
-After `install`, run `marketplace-kit check` to confirm the kit's
-rules pass — the canonical pipeline is **check → install → commit →
-check passes → CI green**.
-
-#### `auto_generate_missing` — reserved for a future iteration
-
-A `auto_generate_missing: false | true` input is declared (default
-`false`) to reserve the API for a future feature: when set to
-`true`, missing files would be drafted by an LLM at workflow time
-and opened as a PR (against this repo for `local`/`either` rules,
-or against `${org_health_repo}` for `inherit`-mode rules) so policy
-files stay current as guidance evolves.
-
-This input is a forward-compatible stub today — setting `true`
-emits a one-time warning and otherwise has no effect. Existing
-callers don't need to change anything once the implementation lands.
-The static `marketplace-kit generate-policy` command continues to
-work today and is the supported way to bootstrap a file.
-
-### DP001 / CQ001 / LT001-005 — CI / supply-chain hygiene
-
-Adjacent to the community-health rules, the kit checks for the
-standard supply-chain and lint config files a healthy Marketplace
-repo should ship. These follow the same `fail | warn | skip` policy
-pattern and the same generator-template story (`marketplace-kit
-generate-policy <kind>`).
-
-| ID    | File(s)                                                                    | Default policy | Generator kind             |
-|-------|----------------------------------------------------------------------------|----------------|----------------------------|
-| DP001 | `.github/dependabot.yml` / `.dependabot.yaml`                              | `warn`         | `dependabot`               |
-| CQ001 | any workflow referencing `github/codeql-action`                            | `warn`         | `codeql-workflow` *or* `code-scan-workflow` (mutually exclusive — pick one) |
-| LT001 | `.editorconfig`                                                            | `warn`         | (no template; trivial)     |
-| LT002 | `.gitattributes`                                                           | `warn`         | (no template; repo-shaped) |
-| LT003 | `.gitignore`                                                               | `warn`         | (no template; repo-shaped) |
-| LT004 | `.markdownlint.yaml` / `.markdownlint-cli2.yaml` / `.markdownlint.json`    | `skip`         | `markdownlint`             |
-| LT005 | `.yamllint.yml` / `.yamllint.yaml` / `.yamllint`                           | `skip`         | `yamllint`                 |
-
-The lint rules default to `skip` (LT004/LT005) or `warn` (LT001-003)
-so legacy repos can adopt the kit without immediate cleanup. Promote
-to `fail` as your repo catches up.
-
-#### CQ001 — choose ONE of `codeql-workflow` or `code-scan-workflow`
-
-Two templates satisfy CQ001; pick exactly one. Running both doubles
-CodeQL spend on every dev push (same `github/codeql-action`, same
-SARIF, twice the minutes) and splits the SHA-bump source of truth
-across two files.
-
-| | `codeql-workflow` | `code-scan-workflow` |
-|---|---|---|
-| **What ships** | Standalone `.github/workflows/codeql.yml` with `github/codeql-action` SHAs pinned inline | `.github/workflows/bos-universal-security-kicker.yml` that calls the hub reusable security workflow |
-| **SHA rollouts** | You bump SHAs in this repo on every CodeQL release | One hub commit propagates to every consumer on next run |
-| **Covers** | CodeQL only | CodeQL **and** the `bos-code-scanning-kit@v1` composite (posture audit + actionlint / gitleaks / shellcheck) |
-| **Cross-org / external use** | Self-contained — no hub dependency | Requires read access to `blackoutsecure/bos-automation-hub` |
-| **Producer-kit escape hatch** | n/a | Set `enable_kit_composite: false` if this repo IS the producer of `bos-code-scanning-kit@v1` |
-| **Advanced posture probes (PS002/PS003)** | n/a | Built-in preflight + `SCANNING_PAT` plumbing |
-
-The `marketplace-kit install` command emits a warning if you try to
-scaffold one template next to an existing canonical file for the
-other. The recommended migration path:
-
-```bash
-# Migrate from standalone CodeQL to the hub-reusable form:
-marketplace-kit install code-scan-workflow --owner my-org
-rm .github/workflows/codeql.yml                       # commit in same PR
-```
-
-Both templates produce a top-level workflow file referencing
-`github/codeql-action` (the latter as a `# uses:` documentary
-comment in the header), which is what CQ001 actually keys off — it
-inspects workflow files at the repo's surface, not transitive
-reusable callees.
-
-### GH001-GH003 — GitHub Advanced Security toggles (live repo settings)
-
-These rules call the GitHub API to verify your repo-level security
-toggles are actually enabled — surfacing drift between intent ("we
-turned on secret scanning") and reality. Each requires `github_token`
-with the appropriate scope.
-
-| ID    | Setting                              | API                                                                    | Token scope                       | Default |
-|-------|--------------------------------------|------------------------------------------------------------------------|-----------------------------------|---------|
-| GH001 | Code scanning (CodeQL default-setup OR workflow) | `GET /repos/{}/code-scanning/default-setup`                | `metadata: read`                  | `warn`  |
-| GH002 | Secret scanning                      | `GET /repos/{}` → `security_and_analysis.secret_scanning.status`        | admin/write on repo (PAT/App)†    | `warn`  |
-| GH003 | Dependabot alerts                    | `GET /repos/{}/vulnerability-alerts` (204/404)                          | `Administration: read` (PAT/App)  | `warn`  |
-
-† **About GH002:** `security_and_analysis` is only present in
-`GET /repos/{}` responses when the caller has admin or write access
-to the repo. The default `GITHUB_TOKEN` does NOT see this field
-even though it can read the rest of the repo metadata. When the
-field is absent, GH002 emits `skip` with a remediation hint rather
-than a false-positive `disabled` -- supply a PAT or App
-installation token with admin/write to introspect.
-
-**Public repos:** all three features are free; default-on for new
-repos created after 2023 and recommended for everything else.
-
-**Private repos:** require a GitHub Advanced Security license. Set
-`require_ghas_*: skip` if you're on a plan without GHAS.
-
-If the token lacks scope the rule emits `skip` (not `fail`) with an
-explanation, so a missing `Administration: read` doesn't silently
-mask the broader check.
-
-### MS001 — Microsoft Security DevOps workflow (opt-in)
-
-`microsoft/security-devops-action` wraps a curated set of OSS scanners
-(Bandit, Checkov, ESLint, Terrascan, Trivy, BinSkim, PSRule, …) and
-surfaces findings as SARIF in GHAS code-scanning. For Azure-connected
-repos, findings also flow into Microsoft Defender for Cloud.
-
-* **Default:** `skip` — high signal for repos shipping IaC or
-  container images, marginal noise for pure source repos.
-* **Generator:** `marketplace-kit generate-policy security-devops-workflow`.
-* Set `require_security_devops: warn` (or `fail`) for IaC-heavy or
-  containerised repos.
-
-### SR001 — OpenSSF Scorecard workflow (opt-in)
-
-`ossf/scorecard-action` scores your repo's supply-chain posture
-against the OpenSSF Scorecard checks (Branch-Protection, Pinned-Deps,
-Token-Permissions, etc.) and publishes the result at
-<https://scorecard.dev>. Free for public repos.
-
-* **Default:** `skip`.
-* **Generator:** `marketplace-kit generate-policy scorecard-workflow`.
-* Recommended for public Marketplace actions — your Scorecard becomes
-  a public quality signal alongside the Marketplace listing.
-
-### RM001-RM005 — Live repo "About" box (description, homepage, topics)
-
-Validates what the public sees in the repo sidebar — the same
-fields the companion [`repo-metadata`](#repo-about-box-sync-repo-metadata)
-composite writes on release. Each rule reads
-`GET /repos/{owner}/{repo}`; the default `GITHUB_TOKEN` is enough
-(these fields are public-readable). The job summary additionally
-emits a **Current repo About box** sub-section showing the actual
-live values so you can confirm what consumers see without leaving
-the workflow log.
-
-| ID    | Field                | Pass criterion                                                         | Default policy | Hard rules                                              |
-|-------|----------------------|------------------------------------------------------------------------|----------------|---------------------------------------------------------|
-| RM001 | `description` set    | Non-empty                                                              | `warn`         | —                                                       |
-| RM002 | `description` length | `repo_description_min_length` ≤ len ≤ `repo_description_max_length`    | `warn`         | `>repo_description_max_length` (default 350) → **fail** |
-| RM003 | `homepage`           | http(s) URL                                                            | `skip`         | Set but non-URL → **fail** (regardless of policy)       |
-| RM004 | `topics` count       | 1 ≤ count ≤ 20                                                         | `warn`         | `count > 20` → **fail** (GitHub cap; regardless of policy) |
-| RM005 | `topics` format      | Lowercase, `[a-z0-9-]`, ≤ 50 chars each, no leading/trailing hyphen   | (inherits)     | Any malformed topic → **fail** (regardless of policy)   |
-
-**Why "hard fail regardless of policy" on some rules?** When values
-violate GitHub's own format/cap rules, the *next* `PATCH /repos/{}`
-or `PUT /repos/{}/topics` call would be rejected — so a warning would
-mask a soon-to-be broken release. Format violations are always
-blocking; absence is configurable.
-
-**Tuning the bounds** (per-repo overrides):
-
-```yaml
-- uses: blackoutsecure/bos-marketplace-kit/.github/actions/check@v1
-  with:
-    github_token: ${{ github.token }}
-    # Make every RM rule blocking on the publish branch:
-    require_repo_description: 'fail'
-    require_repo_homepage:    'fail'
-    require_repo_topics:      'fail'
-    # Allow shorter "tagline-style" descriptions:
-    repo_description_min_length: '0'
-    # Raise the upper cap (rare — GitHub still hard-caps at 350):
-    repo_description_max_length: '350'
-```
-
-**Default `GITHUB_TOKEN` is enough** for RM001-RM005 — unlike the
-`repo-metadata` composite which *writes* these fields and needs
-`Administration: write`, the check action only *reads* them, which
-`metadata: read` (granted by default to `GITHUB_TOKEN`) already
-covers.
-
-### Adding new rules
-
-Open a PR against `dev` that:
-
-1. Adds the rule to `.github/actions/check/action.yml`.
-2. Documents it in the [Check rule catalogue](#check-rule-catalogue)
-   section above with a stable ID.
-3. Adds a unit test under `test/` covering the failure case.
-4. Bumps the kit's minor version.
-
-The kit promises stability for `MP###`/`OP###`/`SC###`/`CH###` rule
-IDs across minor versions — adding a rule never reuses an existing
-ID.
+| Prefix  | Severity     | Failure causes                                                                                                                                                                                                |
+| ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MP###` | **Fatal**    | Marketplace publish prerequisite missing or invalid. Action would not be acceptable to GitHub.                                                                                                                |
+| `OP###` | Warning      | Best-practice violation. Non-fatal by default; set `fail_on_warning: true` to promote.                                                                                                                        |
+| `SC###` | **Fatal**    | Security-impacting default missing. Failure indicates a supply-chain or token-exposure risk.                                                                                                                  |
+| `LC###` | Configurable | Licence audit — SPDX resolution, OSI approval and standing, drift across README/`pyproject.toml`/`package.json`, copyright notice, Apache `NOTICE`. Default `warn`; set `require_license_audit`.              |
+| `CH###` | Configurable | Community-health file missing. Default `warn` or `skip` per file; promote to `fail` via the matching `require_*` input.                                                                                       |
+| `DP###` | Configurable | Dependabot config missing. Default `warn`.                                                                                                                                                                    |
+| `CQ###` | Configurable | CodeQL workflow missing. Default `warn`.                                                                                                                                                                      |
+| `LT###` | Configurable | Lint config file missing (`.editorconfig`, `.gitattributes`, `.gitignore`, markdownlint, yamllint).                                                                                                           |
+| `GH###` | Configurable | GitHub Advanced Security toggle disabled (code scanning, secret scanning, Dependabot alerts). Requires `github_token`.                                                                                        |
+| `MS###` | Configurable | Microsoft Security DevOps workflow missing. Default `skip` (opt-in).                                                                                                                                          |
+| `SR###` | Configurable | OpenSSF Scorecard workflow missing. Default `skip` (opt-in).                                                                                                                                                  |
+| `SP###` | Configurable | GitHub Sponsors listing not approved for the account, not wired into a `FUNDING.yml` GitHub reads, or not rendering on the repo. Default `skip` (opt-in). Requires `github_token`.                            |
+| `RM###` | Configurable | Live repo settings: the "About" box (description, homepage, topics) and the Issues tab. Reads `GET /repos/{owner}/{repo}` (default `GITHUB_TOKEN` is sufficient). Companion to the `repo-metadata` composite. |
+
+**[Full rule reference → `docs/RULES.md`](docs/RULES.md)** — what every
+rule checks, why it exists, and how to fix a failure.
 
 ## 🚢 Publishing to Marketplace
 
@@ -1290,9 +775,9 @@ This kit codifies a two-branch model:
 The `promote` composite handles the wipe-and-replay. The `guard`
 composite enforces the rules during PR review.
 
-See [Publishing to Marketplace](#publishing-to-marketplace) below for
+See [Publishing to Marketplace](#-publishing-to-marketplace) below for
 the full step-by-step walkthrough, and the
-[Check rule catalogue](#check-rule-catalogue) for the complete list
+[Check rule catalogue](docs/RULES.md) for the complete list
 of enforced rules.
 
 This section walks you through publishing a Marketplace-listed Action
@@ -1306,14 +791,14 @@ a release tag is only truly immutable once it backs an actual GitHub
 Release; a bare Git tag can always be force-moved. `promote` already
 implements both halves of that model:
 
-* **Per-version tag** (`v1.2.3`) — created once with `git tag -a` and
+- **Per-version tag** (`v1.2.3`) — created once with `git tag -a` and
   refused if it already exists (`promote` dies rather than
   overwriting). Cut a GitHub Release on top of it (the reusable
   release workflow this kit ships for callers does this via
   `gh release create`) to make it immutable in GitHub's sense —
   consumers pinning the exact SHA/tag get a version that cannot
   change under them.
-* **Floating major tag** (`v1`) — deliberately mutable, force-pushed
+- **Floating major tag** (`v1`) — deliberately mutable, force-pushed
   by `update_major_tag: true` to track the latest release in that
   major. This is the convention GitHub's docs describe for tags "you
   want to be able to update later," and it's what lets callers pin
@@ -1321,8 +806,7 @@ implements both halves of that model:
   table above.
 
 If your org additionally wants **immutable releases** enabled at the
-repository level (Settings → General → *Immutable releases*, prevents
-any release/tag from being edited or deleted once published), turn it
+repository level (Settings → General → _Immutable releases_), turn it
 on — it composes cleanly with this model since `promote` never
 deletes or edits an existing tag.
 
@@ -1338,7 +822,7 @@ but its summary is exactly the kind of thing a release reviewer wants
 to read before approving.
 
 **Recommended: use AI to spot-check community-health content, not
-just presence.** `CH001`–`CH006` only check that a file *exists*; they
+just presence.** `CH001`–`CH006` only check that a file _exists_; they
 don't grade its content. Before a release (or periodically), point
 your AI reviewer (GitHub Models via `enable_ai_findings_summary`, or
 any other assistant) at your `CODE_OF_CONDUCT.md` and ask it to diff
@@ -1350,7 +834,6 @@ doesn't slip through. This is a manual/human-in-the-loop step today —
 generate a first draft, but content-quality grading of an existing
 file is out of scope for an automated `fail`/`warn` rule (it is
 inherently judgment-based, unlike "does the file exist").
-
 
 Marketplace has FIVE non-negotiable prerequisites:
 
@@ -1441,67 +924,58 @@ for anyone copying that template into another repo.
 
 #### Tokens
 
-| Token | Required? | Identity | Used for | Scopes / permissions | Why |
-|-------|-----------|----------|----------|----------------------|-----|
-| `secrets.GITHUB_TOKEN` | **Mandatory** (auto-provided by Actions) | `github-actions[bot]` (Integration App ID `15368`) | `actions/checkout`, default `git push` to `main` + tag, `gh release create`, all `gh api` probes (FUNDING resolver) | Job-level `permissions: { contents: write }` on the `promote` job; `contents: write` on the `release` job for the GitHub Release create. | Cannot be disabled. Every workflow run is auto-issued one per job (TTL = job lifetime). Without it, `actions/checkout` cannot clone, `gh api` cannot authenticate, and the workflow simply cannot run. There is no "off" mode. |
-| `secrets.RELEASE_PAT` | Optional (opt-in) | The PAT owner (user) or the GitHub App backing a fine-grained PAT | Same push as above, when `GITHUB_TOKEN` cannot satisfy branch protection | **Fine-grained (recommended):** Contents = Read & Write on the action repo, Metadata = Read-only. **Classic:** the `repo` scope (see [classic PAT specifics (RELEASE_PAT)](#classic-pat-specifics-release_pat) below for the explicit checkbox list). | Only needed when `main` is locked behind a ruleset or classic protection that `GITHUB_TOKEN` cannot bypass. The PAT's identity (or its backing App) MUST be listed in the ruleset's `bypass_actors`. The resolver probes `/user` (validity), `repos/<repo>.permissions.push` (identity), AND `POST /repos/<repo>/git/blobs` (token scope) BEFORE checkout and fails the job with a remediation hint on any misconfiguration — silent fallback would hide operator intent. When unset, the resolver emits a notice and falls through to `GITHUB_TOKEN`. |
-| `secrets.REPO_ADMIN_PAT` | Optional (advanced; not needed for the single-PAT path) | The PAT owner (user) or the GitHub App backing a fine-grained PAT | Post-release `repo-metadata` composite: PATCH `/repos/{owner}/{repo}` (description / homepage / sidebar widgets) + PUT `/repos/{owner}/{repo}/topics`. **Only consulted when explicitly set** — if unset, the job falls back to `RELEASE_PAT` (which already has the same authority for classic PATs, and the same authority for fine-grained PATs once you add `Administration: Read & Write` to it). | **Fine-grained:** Administration = Read & Write AND Metadata = Read-only on the action repo. **Classic:** the `repo` scope — same checkbox list as `RELEASE_PAT` (see [classic PAT specifics (RELEASE_PAT)](#classic-pat-specifics-release_pat)). Classic does not have a granular Administration-write scope. | Provision this only when you want the metadata sync's blast radius isolated from the release push — a fine-grained PAT scoped purely to `Administration:Write` (no Contents:Write) writes the About box but cannot push code, so a leak cannot create a malicious release. Most operators do not need this and should use the single-PAT path described under [Single-PAT default vs separate-PATs (advanced)](#single-pat-default-vs-separate-pats-advanced). |
+| Token                    | Required?                                               | Identity                                                          | Used for                                                                                                                                                                                                                                                                                                                                                                                               | Scopes / permissions                                                                                                                                                                                                                                                                                           | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `secrets.GITHUB_TOKEN`   | **Mandatory** (auto-provided by Actions)                | `github-actions[bot]` (Integration App ID `15368`)                | `actions/checkout`, default `git push` to `main` + tag, `gh release create`, all `gh api` probes (FUNDING resolver)                                                                                                                                                                                                                                                                                    | Job-level `permissions: { contents: write }` on the `promote` job; `contents: write` on the `release` job for the GitHub Release create.                                                                                                                                                                       | Cannot be disabled. Every workflow run is auto-issued one per job (TTL = job lifetime). Without it, `actions/checkout` cannot clone, `gh api` cannot authenticate, and the workflow simply cannot run. There is no "off" mode.                                                                                                                                                                                                                                                                                                                         |
+| `secrets.RELEASE_PAT`    | Optional (opt-in)                                       | The PAT owner (user) or the GitHub App backing a fine-grained PAT | Same push as above, when `GITHUB_TOKEN` cannot satisfy branch protection                                                                                                                                                                                                                                                                                                                               | **Fine-grained (recommended):** Contents = Read & Write on the action repo, Metadata = Read-only. **Classic:** the `repo` scope (see [classic PAT specifics (RELEASE_PAT)](#classic-pat-specifics-release_pat) below for the explicit checkbox list).                                                          | Only needed when `main` is locked behind a ruleset or classic protection that `GITHUB_TOKEN` cannot bypass. The PAT's identity (or its backing App) MUST be listed in the ruleset's `bypass_actors`. The resolver probes `/user` (validity), `repos/<repo>.permissions.push` (identity), AND `POST /repos/<repo>/git/blobs` (token scope) BEFORE checkout and fails the job with a remediation hint on any misconfiguration — silent fallback would hide operator intent. When unset, the resolver emits a notice and falls through to `GITHUB_TOKEN`. |
+| `secrets.REPO_ADMIN_PAT` | Optional (advanced; not needed for the single-PAT path) | The PAT owner (user) or the GitHub App backing a fine-grained PAT | Post-release `repo-metadata` composite: PATCH `/repos/{owner}/{repo}` (description / homepage / sidebar widgets) + PUT `/repos/{owner}/{repo}/topics`. **Only consulted when explicitly set** — if unset, the job falls back to `RELEASE_PAT` (which already has the same authority for classic PATs, and the same authority for fine-grained PATs once you add `Administration: Read & Write` to it). | **Fine-grained:** Administration = Read & Write AND Metadata = Read-only on the action repo. **Classic:** the `repo` scope — same checkbox list as `RELEASE_PAT` (see [classic PAT specifics (RELEASE_PAT)](#classic-pat-specifics-release_pat)). Classic does not have a granular Administration-write scope. | Provision this only when you want the metadata sync's blast radius isolated from the release push — a fine-grained PAT scoped purely to `Administration:Write` (no Contents:Write) writes the About box but cannot push code, so a leak cannot create a malicious release. Most operators do not need this and should use the single-PAT path described under [Single-PAT default vs separate-PATs (advanced)](#single-pat-default-vs-separate-pats-advanced).                                                                                         |
 
 ##### Classic PAT specifics (`RELEASE_PAT`)
 
 Created at <https://github.com/settings/tokens> → **Generate new
-token (classic)**. The kit has been tested against classic PATs as
-well as fine-grained; classic remains supported because some org
+token (classic)**. Classic remains supported because some org
 policies disable fine-grained PATs entirely. Use the minimum-scope
 recipe below — anything broader is unnecessary.
 
-**Required (tick exactly these):**
+**Required (tick exactly these):** `repo` (Full control of private
+repositories) — and nothing else. That single top-level scope
+auto-selects `repo:status`, `repo_deployment`, `public_repo`,
+`repo:invite`, and `security_events`, and it is the only classic
+scope granting `git push` + ref/tag write. Classic has no
+"contents only" variant, so `repo` is the smallest unit that works.
 
-| Scope (top-level) | Tick? | Why |
-|---|---|---|
-| `repo` (Full control of private repositories) | ✅ **Yes** | This single top-level scope auto-selects `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, and `security_events`. It is the only classic scope that grants `git push` + ref/tag write. There is no "contents only" granular variant in classic — `repo` is the smallest unit that works. |
-
-**Do NOT tick (over-scoped for this PAT's single job):**
-
-| Scope | Why not |
-|---|---|
-| `workflow` | Promote intentionally never writes `.github/workflows/**` to `main` (the guard hard-blocks it). |
-| `admin:org`, `write:org`, `read:org`, `manage_runners:org` | Org admin is not needed to push a tag to a single repo. |
-| `admin:enterprise`, `manage_runners:enterprise`, `manage_billing:enterprise`, `read:enterprise`, `scim:enterprise` | Enterprise-level access is never required for a per-repo release. |
-| `delete_repo`, `delete:packages` | Destructive scopes irrelevant to release publishing. |
-| `admin:public_key`, `admin:repo_hook`, `admin:org_hook` | Not used. |
-| `gist`, `notifications`, `user`, `write:discussion`, `read:discussion` | Not used. |
-| `audit_log`, `codespace`, `project`, `copilot`, `read:packages`, `write:packages` | Not used. |
+**Do NOT tick** — `workflow` (promote never writes
+`.github/workflows/**` to `main`; the guard hard-blocks it), any
+`*:org` / `*:enterprise` scope, `delete_repo`, `delete:packages`,
+`admin:public_key`, `admin:repo_hook`, `admin:org_hook`, `gist`,
+`notifications`, `user`, `*:discussion`, `audit_log`, `codespace`,
+`project`, `copilot`, or `*:packages`. None are used by the single
+job this PAT serves.
 
 **SAML SSO authorize (mandatory for `blackoutsecure` and any other
 SAML-enforced org):**
 
 1. On the token-create / token-edit page, under **"Configure SSO"**
-   next to the saved token, click *Authorize* for each SAML org you
+   next to the saved token, click _Authorize_ for each SAML org you
    need access to.
 2. Save. Without this, every API call against the org returns HTTP
    403 with body `Resource protected by organization SAML
-   enforcement` and the `resolve-token` step in `release.yml` will
+enforcement` and the `resolve-token` step in `release.yml` will
    fail fast with a SAML-specific remediation pointing back at this
    step.
 
 **Expiration:** ≤ 90 days. Rotate on schedule — a leaked classic PAT
-with `repo` is more dangerous than a leaked fine-grained PAT because
-it can write to every private repo the owner can see, not just the
-selected ones.
+with `repo` can write to every private repo the owner can see, not
+just the selected ones.
 
 **Storage:** save as `RELEASE_PAT` under repo Settings → Secrets and
 variables → Actions → Secrets (not Variables — secrets are masked in
 logs).
 
-**Recommendation:** unless your `main` is behind protection that
+**Recommendation:** unless `main` is behind protection that
 `GITHUB_TOKEN` (`github-actions[bot]`, App `15368`) cannot bypass,
-leave `RELEASE_PAT` unset. The resolver falls through to
-`GITHUB_TOKEN` cleanly, with no SAML cycle, no scope mistakes, and
-no rotation overhead. Configure `RELEASE_PAT` only when an audit
-trail requires the release commit + tag to be attributed to a human
-identity, or when a ruleset's `bypass_actors` explicitly names the
-PAT owner.
+leave `RELEASE_PAT` unset — the resolver falls through cleanly, with
+no SAML cycle, no scope mistakes, and no rotation overhead.
 
 ##### Single-PAT default vs separate-PATs (advanced)
 
@@ -1513,37 +987,26 @@ shapes for supplying that authority — pick one:
 `RELEASE_PAT` only and reuse it for the metadata sync. The workflow
 does this automatically when `REPO_ADMIN_PAT` is unset.
 
-* **Classic:** the `repo` scope is the smallest unit GitHub offers
-  and it already grants every API surface both jobs use —
-  `git push` to `main` + tag (release) AND `PATCH /repos/{}` plus
-  `PUT /repos/{}/topics` (metadata sync). A second classic PAT with
-  the same `repo` scope adds zero isolation — it is the same
-  authority duplicated, with double the rotation, SAML
-  authorization, and leak surface.
-* **Fine-grained:** issue one PAT with **Contents: Read & Write**
-  + **Administration: Read & Write** + **Metadata: Read-only** on
-  the action repo. The release push uses Contents, the metadata
-  sync uses Administration, both share the same PAT.
-* Result: one secret to rotate, one SAML authorization to maintain,
-  one identity in the audit trail.
+- **Classic:** the `repo` scope already grants every API surface both
+  jobs use — `git push` to `main` + tag AND `PATCH /repos/{}` plus
+  `PUT /repos/{}/topics`. A second classic PAT with the same scope
+  adds zero isolation, and doubles the rotation, SAML authorization,
+  and leak surface.
+- **Fine-grained:** issue one PAT with **Contents: Read & Write** +
+  **Administration: Read & Write** + **Metadata: Read-only** on the
+  action repo.
+- Result: one secret to rotate, one SAML authorization, one identity
+  in the audit trail.
 
 **Separate-PATs path (advanced; fine-grained only).** Provision
 `REPO_ADMIN_PAT` as a second fine-grained PAT scoped to
 **Administration: Read & Write** (and Metadata: Read-only) but
-**without Contents: Write**. Keep `RELEASE_PAT` scoped to just
-Contents + Metadata. The workflow honours `REPO_ADMIN_PAT` first
-when it is set.
-
-* Why bother: a leak of `RELEASE_PAT` can push code but cannot
-  rename the repo, flip visibility, or change branch protection.
-  A leak of `REPO_ADMIN_PAT` can mutate repo settings but cannot
-  push code or tags. Useful when those blast radii need to be
-  rotated independently or attributed to different humans in the
-  audit log.
-* Why NOT bother for classic: classic has no granular
-  Administration scope. Both PATs would need `repo`, which carries
-  Contents:Write transitively — so the separation is theatre.
-  Stick to the single-PAT path with classic.
+**without Contents: Write**, keeping `RELEASE_PAT` on Contents +
+Metadata. The workflow honours `REPO_ADMIN_PAT` first when set. The
+point is blast-radius isolation: a leaked `RELEASE_PAT` can push code
+but cannot change repo settings, and vice versa. Pointless with
+classic PATs, which have no granular Administration scope — both
+would need `repo`, so the separation is theatre.
 
 When neither secret is set the metadata-sync job auto-skips with a
 notice; the release itself still publishes cleanly. Setting only
@@ -1555,56 +1018,41 @@ release push otherwise gets from `RELEASE_PAT`.
 
 Configure under **Settings → Secrets and variables → Actions → Variables**.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `DEFAULT_RUNNER` | *(required)* | Either a bare runner label (e.g. `ubuntu-latest`) or a JSON array string (e.g. `'["self-hosted","linux","x64"]'`). Both shape and presence are enforced by the `preflight-runner-config` job. |
+| Variable              | Default             | Purpose                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_RUNNER`      | _(required)_        | Either a bare runner label (e.g. `ubuntu-latest`) or a JSON array string (e.g. `'["self-hosted","linux","x64"]'`). Both shape and presence are enforced by the `preflight-runner-config` job.                                                                                                                                                                                                              |
 | `BOS_FUNDING_ENABLED` | `true` (when unset) | Master switch for the FUNDING.yml resolver. When `true`/`1`/`yes`/`on`, the resolver checks per-repo → org `.github` → emits notices/warnings. When set to anything else (`false`, `0`, etc.), the resolver skips all probes, excludes `.github/FUNDING.yml` from the allowlist, and emits one notice acknowledging the opt-out. The Sponsor button on the Marketplace listing/repo header will be absent. |
 
 #### What the FUNDING resolver decides
 
 The `resolve-funding` step in [release.yml](.github/workflows/release.yml)
-classifies every release into one of seven outcomes (surfaced as the
+classifies every release into one of six outcomes (surfaced as the
 job output `funding_status` and shown in the job summary):
 
-| `funding_status` | Allowlist | Surface | Trigger |
-|------------------|-----------|---------|---------|
-| `disabled` | excluded | `::notice::` | `vars.BOS_FUNDING_ENABLED` is non-truthy |
-| `per-repo` | **included** | `::notice::` | `.github/FUNDING.yml` exists on `dev` (promoted to `main` as an override) |
-| `inherited` | excluded | `::notice::` | Owner is an org, `<org>/.github` is public and contains FUNDING.yml (root, `.github/`, or `docs/`) |
-| `user-no-inheritance` | excluded | `::warning::` | Repo owner is a user account — GitHub does not inherit default community files for user repos |
-| `no-org-dotgithub` | excluded | `::warning::` | `<org>/.github` is missing or private/internal (inheritance is public-only) |
-| `org-dotgithub-not-public` | excluded | `::warning::` | `<org>/.github` exists but is `private`/`internal` |
-| `org-missing-funding` | excluded | `::warning::` | `<org>/.github` is public but contains no FUNDING.yml in any of the three honored locations |
+| `funding_status`           | Allowlist    | Surface       | Trigger                                                                                                     |
+| -------------------------- | ------------ | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `disabled`                 | excluded     | `::notice::`  | `vars.BOS_FUNDING_ENABLED` is non-truthy                                                                    |
+| `per-repo`                 | **included** | `::notice::`  | `.github/FUNDING.yml` exists on `dev` (promoted to `main` as an override)                                   |
+| `inherited`                | excluded     | `::notice::`  | `<owner>/.github` is public and contains `.github/FUNDING.yml` (works for a user account as well as an org) |
+| `no-org-dotgithub`         | excluded     | `::warning::` | `<owner>/.github` is missing (inheritance is public-only)                                                   |
+| `org-dotgithub-not-public` | excluded     | `::warning::` | `<owner>/.github` exists but is `private`/`internal`                                                        |
+| `org-missing-funding`      | excluded     | `::warning::` | `<owner>/.github` is public but has no `.github/FUNDING.yml`                                                |
 
 Every warning includes a remediation hint. The resolver itself never
 fails the release — it informs.
 
 #### Sponsor button alignment
 
-Independently of FUNDING.yml content, the repo-level **Settings →
-Features → Sponsorships** checkbox controls whether the Sponsor
-button renders at all. The `check-funding-alignment` step in
-[release.yml](.github/workflows/release.yml) cross-references the
-resolver's `funding_status` against the rendered feature flag
-(`Repository.hasSponsorshipsEnabled`) and the effective link list
-(`Repository.fundingLinks`, read via GraphQL with `GITHUB_TOKEN`).
-
-| `alignment_status` | Sponsorships feature | Effective links rendered | Verdict | Surface |
-|--------------------|----------------------|--------------------------|---------|---------|
-| `aligned` | on | >0 | Working as intended | `::notice::` |
-| `aligned-off` | off | 0 | Intentionally off; consistent | `::notice::` |
-| `button-empty` | on | 0 | **Misaligned** — Sponsor button opens an empty modal | `::warning::` |
-| `links-hidden` | off | (n/a) | **Misaligned** — FUNDING content exists but no button renders | `::warning::` |
-| `unknown` | (GraphQL probe failed) | n/a | Diagnostic-only; release proceeds | `::notice::` |
-
-GitHub exposes **no public API to flip the Sponsorships feature flag**
-(no REST field on `PATCH /repos/{}`, no GraphQL mutation — it is
-intentionally human-gated). This step is therefore detection-only: it
-emits a warning with a one-click Settings URL on misalignment and
-never fails the release. Fix the button-empty / links-hidden cases
-once by ticking or unticking the checkbox at
-`https://github.com/<owner>/<repo>/settings` and the warning goes
-silent on the next release.
+The `check-funding-alignment` step cross-references `funding_status`
+against the rendered feature flag (`Repository.hasSponsorshipsEnabled`)
+and the effective link list (`Repository.fundingLinks`), emitting
+`aligned` / `aligned-off` / `button-empty` / `links-hidden` /
+`unknown`. GitHub exposes **no public API to flip the Sponsorships
+feature flag** (it is intentionally human-gated), so this is
+detection-only: a misalignment gets a warning with a one-click
+Settings URL and never fails the release. The same misalignment is
+caught pre-release by [SP003](docs/RULES.md#sp001-sp003--github-sponsors-opt-in),
+which is where the full account/file/render model is documented.
 
 ### Step 6 — Configure branch protection on `main`
 
@@ -1637,10 +1085,10 @@ scripts/bootstrap-branch-protection.sh
 
 This sets:
 
-* `required_status_checks`: marketplace-check
-* `enforce_admins`: true
-* `allow_force_pushes`: false
-* `allow_deletions`: false
+- `required_status_checks`: marketplace-check
+- `enforce_admins`: true
+- `allow_force_pushes`: false
+- `allow_deletions`: false
 
 **Caveat:** Branch protection does NOT enforce file-path restrictions.
 You're relying entirely on the kit's `guard` + `promote` actions to
@@ -1656,8 +1104,8 @@ gh workflow run release.yml -f tag_name=v1.0.0 -f dry_run=true
 
 Inspect the dry-run output:
 
-* `removed_paths` — verify nothing surprising is being deleted from `main`.
-* `removed_violations` — should be empty (or list pre-existing drift to clean up).
+- `removed_paths` — verify nothing surprising is being deleted from `main`.
+- `removed_violations` — should be empty (or list pre-existing drift to clean up).
 
 Once happy:
 
@@ -1667,9 +1115,9 @@ gh workflow run release.yml -f tag_name=v1.0.0
 
 The promote workflow will:
 
-* Push a new commit to `main` with ONLY the allowlisted paths.
-* Tag `main` at that commit with `v1.0.0`.
-* Create a GitHub Release.
+- Push a new commit to `main` with ONLY the allowlisted paths.
+- Tag `main` at that commit with `v1.0.0`.
+- Create a GitHub Release.
 
 #### Promote without publishing a Release
 
@@ -1768,9 +1216,9 @@ with `extra_deny_patterns` (see [🧰 What's in the box](#-whats-in-the-box)).
 
 ### Further reading
 
-* [Check rule catalogue](#check-rule-catalogue) below.
-* [GitHub Marketplace publishing docs](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace)
-* [Feather icon set](https://feathericons.com/) (v4.28.0)
+- [Check rule catalogue](docs/RULES.md) below.
+- [GitHub Marketplace publishing docs](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace)
+- [Feather icon set](https://feathericons.com/) (v4.28.0)
 
 ## 🧪 Examples
 
@@ -1807,7 +1255,7 @@ jobs:
           action_yml_path: action.yml
           # Set `true` to surface OP### best-practice warnings as
           # failures. Default `false` keeps the PR green on style nits.
-          fail_on_warning: 'false'
+          fail_on_warning: "false"
 ```
 
 ### Full lifecycle (check + guard + promote)
@@ -1818,9 +1266,9 @@ Marketplace publishing prohibits workflows on the default branch).
 
 Prerequisites:
 
-* Default branch is `main`.
-* Working branch is `dev` (or your equivalent).
-* `vars.MARKETPLACE_BYPASS_ACTOR_ID` is set if you've enabled the org
+- Default branch is `main`.
+- Working branch is `dev` (or your equivalent).
+- `vars.MARKETPLACE_BYPASS_ACTOR_ID` is set if you've enabled the org
   ruleset (see [`scripts/bootstrap-ruleset.sh`](scripts/bootstrap-ruleset.sh)).
 
 #### File 1 — `.github/workflows/marketplace-check.yml`
@@ -1849,7 +1297,7 @@ jobs:
       - uses: blackoutsecure/bos-marketplace-kit@v1
         with:
           action_yml_path: action.yml
-          fail_on_warning: 'true'
+          fail_on_warning: "true"
 
   name-check:
     # Only run on PRs (one external API call per check).
@@ -1871,7 +1319,7 @@ jobs:
           proposed_name: ${{ steps.name.outputs.name }}
           # After first publish your own listing collides — switch
           # this to 'false' once you've published.
-          fail_on_collision: 'true'
+          fail_on_collision: "true"
 
   branding:
     name: Render branding preview
@@ -1916,11 +1364,11 @@ jobs:
           persist-credentials: false
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/guard@v1
         with:
-          pr_base_sha:        ${{ github.event.pull_request.base.sha }}
-          pr_head_sha:        ${{ github.event.pull_request.head.sha }}
-          check_pr_diff:      'true'
-          check_tree_state:   'true'
-          require_action_yml: 'true'
+          pr_base_sha: ${{ github.event.pull_request.base.sha }}
+          pr_head_sha: ${{ github.event.pull_request.head.sha }}
+          check_pr_diff: "true"
+          check_tree_state: "true"
+          require_action_yml: "true"
 ```
 
 #### File 3 — `.github/workflows/release.yml`
@@ -1936,10 +1384,10 @@ name: release
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Tag (SemVer, e.g. v1.0.0).'
+        description: "Tag (SemVer, e.g. v1.0.0)."
         required: true
       dry_run:
-        description: 'Stage diff but do not push.'
+        description: "Stage diff but do not push."
         type: boolean
         default: false
 
@@ -1959,10 +1407,10 @@ jobs:
           persist-credentials: true
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/promote@v1
         with:
-          source_branch:  dev
-          target_branch:  main
-          tag_name:       ${{ inputs.tag_name }}
-          dry_run:        ${{ inputs.dry_run }}
+          source_branch: dev
+          target_branch: main
+          tag_name: ${{ inputs.tag_name }}
+          dry_run: ${{ inputs.dry_run }}
           allowlist_paths: |
             action.yml
             LICENSE
@@ -1992,14 +1440,14 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/dist-check@v1
         with:
           # All inputs optional; sensible defaults for ncc-style projects.
-          dist_path:     'dist'
-          build_command: 'npm ci && npm run build'
-          fail_on_drift: 'true'
+          dist_path: "dist"
+          build_command: "npm ci && npm run build"
+          fail_on_drift: "true"
 ```
 
 `dist-check` is opt-in (not part of the root `check` composite)
@@ -2021,12 +1469,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/lint@v1
         with:
-          severity: 'fail'        # 'warn' or 'skip' to downgrade
+          severity: "fail" # 'warn' or 'skip' to downgrade
           # All four linters on by default. Set false to opt out.
-          run_markdownlint: 'true'
-          run_yamllint:     'true'
-          run_shellcheck:   'true'
-          run_actionlint:   'true'
+          run_markdownlint: "true"
+          run_yamllint: "true"
+          run_shellcheck: "true"
+          run_actionlint: "true"
 ```
 
 The composite auto-detects file globs (`**/*.md`, `**/*.yml`,
@@ -2038,37 +1486,30 @@ demand with pinned versions (markdownlint-cli2 `0.18.1`, yamllint
 **Configs — packaged defaults with per-repo override.** The composite
 ships sensible default configs for `markdownlint-cli2`, `yamllint`,
 and `shellcheck` inside the action under
-[`.github/actions/lint/configs/`](.github/actions/lint/configs/). They
-are tuned for GitHub Actions YAML, documentation-heavy READMEs, and
-composite-action shell snippets. Consumers get them automatically with
-zero setup. To override, drop the corresponding file at the consumer
-repo root and each linter's normal auto-discovery (which takes
-precedence over the packaged fallback) picks it up:
+[`.github/actions/lint/configs/`](.github/actions/lint/configs/),
+tuned for GitHub Actions YAML, documentation-heavy READMEs, and
+composite-action shell snippets. To override, drop the corresponding
+file at the consumer repo root — each linter's normal auto-discovery
+takes precedence over the packaged fallback:
 
-| Linter             | Repo-root override                                     |
-| ------------------ | ------------------------------------------------------ |
-| `markdownlint-cli2`| `.markdownlint.{yaml,yml,jsonc,json,cjs}`              |
-| `yamllint`         | `.yamllint` / `.yamllint.yml` / `.yamllint.yaml`       |
-| `shellcheck`       | `.shellcheckrc`                                        |
-
-The fallback fires only when no repo-local file is present, so a
-consumer that wants stricter or looser rules (e.g. `line-length: 250`
-for KQL-heavy workflows) keeps full control by shipping its own
-config — same escape hatch as every other lint composite in the
-ecosystem.
+| Linter              | Repo-root override                               |
+| ------------------- | ------------------------------------------------ |
+| `markdownlint-cli2` | `.markdownlint.{yaml,yml,jsonc,json,cjs}`        |
+| `yamllint`          | `.yamllint` / `.yamllint.yml` / `.yamllint.yaml` |
+| `shellcheck`        | `.shellcheckrc`                                  |
 
 `marketplace-kit generate-policy markdownlint`, `yamllint`, or
-`shellcheckrc` still emits a starter file if you want to scaffold an
+`shellcheckrc` emits a starter file if you want to scaffold an
 override.
 
 ### Branch-protection compliance (`branch-protection`)
 
 The `branch-protection` composite has two modes:
 
-* **`check`** (default, safe): read the current branch-protection
+- **`check`** (default, safe): read the current branch-protection
   state via `GET /repos/{}/branches/{branch}/protection` and report
   drift against your declared intent. No write permissions needed.
-* **`enforce`**: `PUT` the declared intent (idempotent). Requires a
+- **`enforce`**: `PUT` the declared intent (idempotent). Requires a
   token with `Administration: write`.
 
 ```yaml
@@ -2079,22 +1520,22 @@ jobs:
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/branch-protection@v1
         with:
           github_token: ${{ github.token }}
-          mode: 'check'          # 'enforce' to apply
-          severity: 'warn'       # 'fail' to break PRs on drift
-          branch: 'main'
-          bp_require_pull_request:     'true'
-          bp_required_approvals:       '1'
-          bp_no_force_push:            'true'
-          bp_no_deletion:              'true'
-          bp_require_linear_history:   'true'
-          bp_require_signed_commits:   'false'
+          mode: "check" # 'enforce' to apply
+          severity: "warn" # 'fail' to break PRs on drift
+          branch: "main"
+          bp_require_pull_request: "true"
+          bp_required_approvals: "1"
+          bp_no_force_push: "true"
+          bp_no_deletion: "true"
+          bp_require_linear_history: "true"
+          bp_require_signed_commits: "false"
           bp_required_status_checks: |
             check
             guard
-          bp_required_strict_status_checks: 'true'
+          bp_required_strict_status_checks: "true"
           # `include_administrators` defaults to false (solo-maintainer
           # friendly). Set true when you want EVERYONE to need a PR.
-          bp_include_administrators: 'false'
+          bp_include_administrators: "false"
 ```
 
 The composite outputs `is_compliant`, `drift_summary` (multi-line),
@@ -2158,40 +1599,35 @@ leave `homepage` alone.
 
 Description has an additional explicit mode:
 
-| `description_mode` | Behaviour |
-| --- | --- |
-| `auto` (default) | Explicit description, then AI when enabled, then the existing README seed. |
-| `fallback` | Explicit description, then `description_fallback`, then the README seed; AI is skipped. |
-| `existing` | Leave the current repository description unchanged. |
+| `description_mode` | Behaviour                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `auto` (default)   | Explicit description, then AI when enabled, then the existing README seed.              |
+| `fallback`         | Explicit description, then `description_fallback`, then the README seed; AI is skipped. |
+| `existing`         | Leave the current repository description unchanged.                                     |
 
-`ai_model` defaults to `auto` across the kit. In that mode the action chooses
-the optimized default for the task and honors task-specific environment
-overrides such as `GITHUB_MODELS_MODEL_METADATA`, followed by the generic
-`GITHUB_MODELS_MODEL`. An explicit model identifier still wins. The validator,
-relevance gate, metadata sync, category classifier, and future content tools
-are separate AI tasks, so one model setting does not silently control all of
-them.
+`ai_model` defaults to `auto` across the kit: the action chooses the
+optimized default for the task and honors task-specific overrides such
+as `GITHUB_MODELS_MODEL_METADATA`, then the generic
+`GITHUB_MODELS_MODEL`. An explicit model identifier still wins. The
+validator, relevance gate, metadata sync, and category classifier are
+separate AI tasks, so one model setting does not silently control all
+of them.
 
-The existing README is used by default (`use_existing_readme: true`). Full
-README regeneration is deliberately disabled by default and is not performed
-by the release metadata sync yet: generating and replacing a public README
-needs a separate reviewable content-generation workflow with a contents-write
-token, secret redaction, preview, and approval step.
-
-The action manifest itself is also intentionally not rewritten by the About-box
-sync. `name`, `branding.icon`, and `branding.color` are Marketplace-facing
-source files and should be changed through a reviewed commit to `action.yml`,
-with `marketplace-kit check` run afterward. The current action supports static
-manifest values; automatic AI manifest rewriting remains a separate opt-in
-feature to design and review rather than a side effect of publishing.
+The existing README is used by default (`use_existing_readme: true`).
+Full README regeneration and `action.yml` rewriting are deliberately
+out of scope: `name`, `branding.icon`, `branding.color`, and the
+README are Marketplace-facing source files that belong in a reviewed
+commit (followed by `marketplace-kit check`), not a side effect of
+publishing. Automating either needs its own workflow with a
+contents-write token, secret redaction, preview, and approval.
 
 Defaults are framed around "this is a release":
 
-* `show_releases: true` — the Releases sidebar widget is on.
-* `show_deployments: false` / `show_packages: false` — opt-in.
-* `generate_topics: false` — opt-in. Set `true` and (optionally)
+- `show_releases: true` — the Releases sidebar widget is on.
+- `show_deployments: false` / `show_packages: false` — opt-in.
+- `generate_topics: false` — opt-in. Set `true` and (optionally)
   pass `topics_fallback` for when AI is unavailable.
-* `ai_enabled: true`, `ai_model: auto`. Falls back
+- `ai_enabled: true`, `ai_model: auto`. Falls back
   deterministically to the raw README seed when the AI call fails
   (most commonly because the job lacks `models: read`).
 
@@ -2225,10 +1661,10 @@ jobs:
           # first when set (advanced blast-radius separation). See
           # Step 5b — Tokens, secrets, and variables.
           github_token: ${{ secrets.REPO_ADMIN_PAT || secrets.RELEASE_PAT }}
-          description: 'Lint, gate, and publish GitHub Marketplace Actions — without the boilerplate.'
-          homepage:    'https://github.com/marketplace/actions/blackout-secure-marketplace-kit'
-          topics:      'github-actions marketplace devops linting branch-protection'
-          ai_enabled:  'false'   # belt-and-braces; explicit values would win anyway
+          description: "Lint, gate, and publish GitHub Marketplace Actions — without the boilerplate."
+          homepage: "https://github.com/marketplace/actions/blackout-secure-marketplace-kit"
+          topics: "github-actions marketplace devops linting branch-protection"
+          ai_enabled: "false" # belt-and-braces; explicit values would win anyway
 ```
 
 #### AI-assisted
@@ -2244,7 +1680,7 @@ jobs:
     needs: release
     permissions:
       contents: read
-      models: read           # required for the AI rewrite; fallback still works without it
+      models: read # required for the AI rewrite; fallback still works without it
     steps:
       - uses: actions/checkout@v5
       - uses: blackoutsecure/bos-marketplace-kit/.github/actions/repo-metadata@v1
@@ -2253,12 +1689,12 @@ jobs:
           # metadata. RELEASE_PAT is the default; REPO_ADMIN_PAT wins
           # when set (advanced blast-radius separation). See Step 5b.
           github_token: ${{ secrets.REPO_ADMIN_PAT || secrets.RELEASE_PAT }}
-          homepage: 'https://github.com/marketplace/actions/my-cool-action'
-          generate_topics: 'true'
-          topics_fallback: 'github-actions devops marketplace'
+          homepage: "https://github.com/marketplace/actions/my-cool-action"
+          generate_topics: "true"
+          topics_fallback: "github-actions devops marketplace"
           # Defaults already match a release: show_releases=true,
           # show_deployments=false, show_packages=false.
-          show_packages: 'true'   # opt in if your repo publishes packages
+          show_packages: "true" # opt in if your repo publishes packages
 ```
 
 Widget toggles caveat: GitHub does not (as of this writing) document
@@ -2282,29 +1718,25 @@ kicker publishes: **pre-release** and **latest**. Set
 `marketplace.release_label` in `.github/bos-universal-config.json` to
 one of:
 
-| Value | Effect |
-| --- | --- |
-| `auto` (default) | Derived from the source branch — see below. |
-| `none` | Neither pre-release nor "latest" is set. |
-| `prerelease` | Labeled non-production ready; never marked "latest". |
-| `latest` | Labeled the latest release for this repository. |
+| Value            | Effect                                               |
+| ---------------- | ---------------------------------------------------- |
+| `auto` (default) | Derived from the source branch — see below.          |
+| `none`           | Neither pre-release nor "latest" is set.             |
+| `prerelease`     | Labeled non-production ready; never marked "latest". |
+| `latest`         | Labeled the latest release for this repository.      |
 
 **`auto`** looks at the branch the release is being cut from
 (`marketplace.source_branch`, or the repo's default branch when unset)
 and matches this org's two-branch convention: `dev` is pre-release,
-`main` is the production "latest" release, and anything else gets
-neither label. This means a repo using the standard `dev`/`main` split
-needs no configuration at all to get sensible release labeling out of
-the box.
+`main` is the production "latest" release, anything else gets neither.
 
 Cascade (first tier that sets it wins): repo
 `.github/bos-universal-config.json` → org-wide
 `sync-files/config/marketplace-kicker-global-config.json` in
-`bos-automation-hub` → the kit's own built-in default, `auto`. An org
-that, for example, wants every repo pre-release by default until
-explicitly promoted can set `release_label: prerelease` once in the
-global config instead of every repo's own config; any repo can still
-override it locally.
+`bos-automation-hub` → the kit's built-in default, `auto`. An org that
+wants every repo pre-release until explicitly promoted can set
+`release_label: prerelease` once in the global config; any repo can
+still override it locally.
 
 ### Auto-publish relevance gate (`auto_publish`)
 
@@ -2335,23 +1767,22 @@ triggered actually succeeds.
    `action.yml` change is exactly as significant whether it comes with
    one test file or a hundred).
 
-   | Category | Example paths | Default weight |
-   | --- | --- | ---: |
-   | Entrypoint | `action.yml`, `run.sh`, `lib.sh`, `helper.py`, `src/**` | 35-40 |
-   | Ecosystem source | `*.py`, `*.sh`, `*.js`, `*.ts`, `*.go` (outside `src/`) | 25 |
-   | Dependency manifests | `pyproject.toml`, `package.json`, `go.mod`, `requirements*.txt` | 20 |
-   | Docs | `README.md` | 15 |
-   | Legal | `LICENSE`, `NOTICE` | 5 |
-   | Tests | `test/**`, `tests/**`, `test_*.py` | 3 |
-   | CI / dotfile metadata | `.github/workflows/**`, `.editorconfig`, `.gitignore`, lint configs | 1 |
-   | Anything else | — | 2 |
+   | Category              | Example paths                                                       | Default weight |
+   | --------------------- | ------------------------------------------------------------------- | -------------: |
+   | Entrypoint            | `action.yml`, `run.sh`, `lib.sh`, `helper.py`, `src/**`             |          35-40 |
+   | Ecosystem source      | `*.py`, `*.sh`, `*.js`, `*.ts`, `*.go` (outside `src/`)             |             25 |
+   | Dependency manifests  | `pyproject.toml`, `package.json`, `go.mod`, `requirements*.txt`     |             20 |
+   | Docs                  | `README.md`                                                         |             15 |
+   | Legal                 | `LICENSE`, `NOTICE`                                                 |              5 |
+   | Tests                 | `test/**`, `tests/**`, `test_*.py`                                  |              3 |
+   | CI / dotfile metadata | `.github/workflows/**`, `.editorconfig`, `.gitignore`, lint configs |              1 |
+   | Anything else         | —                                                                   |              2 |
 
    `auto_publish.repo_type` selects the profile these weights come
    from: `composite-action` (default) treats `action.yml` as the
    entrypoint; `docker-action` also weighs `Dockerfile`/`entrypoint.sh`
    at 40; `library` has no single manifest, so any top-level source
-   module is weighted like an entrypoint (35) instead of the generic
-   25. `auto_publish.weights` overrides individual patterns per repo
+   module is weighted like an entrypoint (35) instead of the generic 25. `auto_publish.weights` overrides individual patterns per repo
    when a project's structure doesn't fit any built-in profile.
 
 2. **Optional AI refinement** — opportunistic, exactly like this kit's
@@ -2382,18 +1813,16 @@ triggered actually succeeds.
   who actually has access.
 - `auto_publish.force_manual_approval: true` forces the same
   environment gate even when AI scoring is enabled — for a repo that
-  wants the scoring/threshold mechanics (so trivial pushes still never
-  queue a release) but still wants a human to click approve before
-  anything actually ships.
+  wants the scoring/threshold mechanics but still wants a human to
+  approve before anything ships.
 
 Rationale for gating on "AI enabled" rather than "AI reachable": a
 reachability failure (rate limit, transient network error, missing
-`models: read` grant) is exactly the kind of thing that should fall
-back to the deterministic score and keep working unattended — that's
-the same contract every other AI feature in this kit already has.
-Whether a human must review a release, on the other hand, is a
-deliberate policy decision a repo makes on purpose; it shouldn't
-silently flip because a model API had a bad minute.
+`models: read` grant) should fall back to the deterministic score and
+keep working unattended — the same contract every other AI feature in
+this kit has. Whether a human must review a release is a deliberate
+policy decision; it shouldn't flip because a model API had a bad
+minute.
 
 #### Recommended default: threshold `65`
 
@@ -2413,18 +1842,18 @@ All keys live under `marketplace_kit.auto_publish` in
 `marketplace_kit` setting: marketplace defaults → optional org global
 config → repo config).
 
-| Key | Default | Description |
-| --- | --- | --- |
-| `enabled` | `false` | Turn the gate on for this repo. |
-| `threshold` | `65` | Running-score threshold (1-100) that triggers a publish. |
-| `repo_type` | `auto` | `auto` \| `composite-action` \| `docker-action` \| `library` — selects the weight profile. |
-| `weights` | `{}` | Per-pattern weight overrides, e.g. `{"Dockerfile": 40}`. |
-| `ai_enabled` | `true` | Opportunistic AI refinement of the deterministic score. `false` also switches unmet-threshold handling to require manual approval. |
-| `ai_provider` | `auto` | Same provider values as the rest of the kit (`auto`, `github-models`, `external`, `none`). |
-| `ai_model` | `auto` | Auto-select the optimized model for relevance scoring; override with a model identifier. |
-| `force_manual_approval` | `false` | Require environment approval even with AI enabled. |
-| `approval_environment` | `marketplace-release-approval` | GitHub Environment name to gate `release` behind when approval is required. |
-| `state_path` | `.github/marketplace-relevance-score.json` | Where the running score is persisted. |
+| Key                     | Default                                    | Description                                                                                                                        |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`               | `false`                                    | Turn the gate on for this repo.                                                                                                    |
+| `threshold`             | `65`                                       | Running-score threshold (1-100) that triggers a publish.                                                                           |
+| `repo_type`             | `auto`                                     | `auto` \| `composite-action` \| `docker-action` \| `library` — selects the weight profile.                                         |
+| `weights`               | `{}`                                       | Per-pattern weight overrides, e.g. `{"Dockerfile": 40}`.                                                                           |
+| `ai_enabled`            | `true`                                     | Opportunistic AI refinement of the deterministic score. `false` also switches unmet-threshold handling to require manual approval. |
+| `ai_provider`           | `auto`                                     | Same provider values as the rest of the kit (`auto`, `github-models`, `external`, `none`).                                         |
+| `ai_model`              | `auto`                                     | Auto-select the optimized model for relevance scoring; override with a model identifier.                                           |
+| `force_manual_approval` | `false`                                    | Require environment approval even with AI enabled.                                                                                 |
+| `approval_environment`  | `marketplace-release-approval`             | GitHub Environment name to gate `release` behind when approval is required.                                                        |
+| `state_path`            | `.github/marketplace-relevance-score.json` | Where the running score is persisted.                                                                                              |
 
 Each repo type can (and should) tune its own criteria — a Docker-based
 action's most significant file is its `Dockerfile`, not `action.yml`;
@@ -2448,7 +1877,7 @@ exactly which change tipped the score.
   threshold; watch a few real pushes' job summaries before tuning
   `weights` or the threshold for a specific repo.
 - Prefer `force_manual_approval: true` over `ai_enabled: false` for a
-  repo that wants both smart scoring *and* a human gate — disabling AI
+  repo that wants both smart scoring _and_ a human gate — disabling AI
   entirely also disables the score refinement, not just the
   auto-publish decision.
 - Keep the `approval_environment`'s reviewer list current in
@@ -2511,31 +1940,31 @@ Exit codes: `0` clean, `1` a rule failed (or warned with
 
 ## ⚠️ Runtime and repository notes
 
-* **Checkout is required.** Put `actions/checkout` before the kit. The action
+- **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to
   inspect.
-* **`action.yml` must be at the repo root of the default branch.** That is a
+- **`action.yml` must be at the repo root of the default branch.** That is a
   Marketplace requirement, not a kit one — `MP007` catches it early.
   Additional manifests under `.github/actions/**` are explicitly permitted;
   they simply are not listed.
-* **Keeping `.github/workflows/**` off `main` is kit policy, not a GitHub
-  rule.** See
+- **Keeping `.github/workflows/**`off`main` is kit policy, not a GitHub
+  rule.\*\* See
   [Marketplace requirements vs. kit policy](#marketplace-requirements-vs-kit-policy).
-* **Skips are not passes.** A rule set to `skip`, or one whose token lacked
+- **Skips are not passes.** A rule set to `skip`, or one whose token lacked
   permission, reports as skipped rather than as evidence that the control is
   in place. `GH003` in particular needs an admin-scoped token.
-* **Live-state rules need network access.** `GH###` and `RM###` call the
+- **Live-state rules need network access.** `GH###` and `RM###` call the
   GitHub REST API; `name-check` calls github.com. Everything else is offline.
-* **AI is optional and non-blocking.** No provider, a disabled provider, or a
+- **AI is optional and non-blocking.** No provider, a disabled provider, or a
   provider error degrades to local remediation. See
   [AI triage and data handling](#ai-triage-and-data-handling).
-* **Protect central config.** Anyone who can change the org global config
+- **Protect central config.** Anyone who can change the org global config
   changes policy in every repo that consumes it. Protect those repos and pin
   this action to a tag or SHA.
-* **No secrets in config.** Keep credentials out of `marketplace_kit` config
+- **No secrets in config.** Keep credentials out of `marketplace_kit` config
   files. Use Actions secrets for sensitive values and Actions variables for
   non-sensitive shared ones.
-* **Untrusted pull requests.** Run checks with `pull_request` (never
+- **Untrusted pull requests.** Run checks with `pull_request` (never
   `pull_request_target` with a PR-head checkout) and no write permissions.
 
 ## 🔐 Security
@@ -2558,31 +1987,31 @@ Use one of the following private channels:
 
 In scope:
 
-* The composite actions under `.github/actions/**`.
-* The Python CLI under `src/marketplace_kit/**`.
-* The reusable workflows under `.github/workflows/**`.
-* The bootstrap scripts under `scripts/**`.
+- The composite actions under `.github/actions/**`.
+- The Python CLI under `src/marketplace_kit/**`.
+- The reusable workflows under `.github/workflows/**`.
+- The bootstrap scripts under `scripts/**`.
 
 Out of scope:
 
-* GitHub Marketplace itself (report to GitHub via
+- GitHub Marketplace itself (report to GitHub via
   <https://github.com/security>).
-* Third-party tools we invoke (`actionlint`, `action-validator`, etc.) —
+- Third-party tools we invoke (`actionlint`, `action-validator`, etc.) —
   report upstream.
-* Bugs in consumer repos that this tool happens to lint.
+- Bugs in consumer repos that this tool happens to lint.
 
 ### Hardening notes for consumers
 
 If you wire this kit into your own CI:
 
-* Pin our actions by **commit SHA**, not tag. Tags can be moved.
-* Set the **minimum required `permissions:`** on the calling workflow.
+- Pin our actions by **commit SHA**, not tag. Tags can be moved.
+- Set the **minimum required `permissions:`** on the calling workflow.
   `guard` needs `contents: read` + `pull-requests: read`. `promote`
   needs `contents: write`. `check` needs `contents: read`.
-* When calling `guard` via `pull_request_target`, do **not** check
+- When calling `guard` via `pull_request_target`, do **not** check
   out the PR head. The default checkout of the base ref is correct
   and safe.
-* When calling `promote`, use a deploy key or a fine-grained PAT
+- When calling `promote`, use a deploy key or a fine-grained PAT
   scoped to the target repo only. Do not use a classic PAT with
   broad scope.
 
@@ -2605,7 +2034,7 @@ below.
 
 All PRs target the **`dev`** branch. The `main` branch is built by
 the release pipeline (see
-[Publishing to Marketplace](#publishing-to-marketplace)) and is
+[Publishing to Marketplace](#-publishing-to-marketplace)) and is
 read-only to humans — PRs opened against `main` will be closed.
 
 ### Local development
@@ -2635,10 +2064,10 @@ needed if you only want to exercise the action surface.
 
 ### Style
 
-* **Bash**: `shellcheck` clean at `--severity=warning`,
+- **Bash**: `shellcheck` clean at `--severity=warning`,
   `set -euo pipefail`, `${VAR}` braces consistently.
-* **Python**: type hints on public APIs, stdlib only in the CLI.
-* **YAML (workflows)**: `actionlint` clean, pin third-party actions
+- **Python**: type hints on public APIs, stdlib only in the CLI.
+- **YAML (workflows)**: `actionlint` clean, pin third-party actions
   by SHA (not tag), minimise `permissions:` per job.
 
 Lint configs live under `.markdownlint.yaml`, `.yamllint.yml`, and
@@ -2647,7 +2076,7 @@ runs the full battery the same way CI does.
 
 ### Adding a new check rule
 
-See [Adding new rules](#adding-new-rules) above for the full
+See [Adding new rules](docs/RULES.md#adding-new-rules) above for the full
 checklist (next sequential `MP###`/`OP###`/`SC###`/`CH###` ID, test
 fixture under `test/`, README catalogue row, `remediation` string,
 minor-version bump).
@@ -2655,7 +2084,7 @@ minor-version bump).
 ### Releasing
 
 Releases are operator-triggered, not automated. See
-[Publishing to Marketplace](#publishing-to-marketplace) for the full
+[Publishing to Marketplace](#-publishing-to-marketplace) for the full
 step-by-step (`release.yml` dispatch on `dev` with the desired tag —
 the workflow promotes the allowlisted file set from `dev` to `main`,
 tags `main`, and creates the GitHub Release).

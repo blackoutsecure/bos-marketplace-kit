@@ -110,7 +110,9 @@ def license_files() -> tuple[str, ...]:
 
 
 _LICENSE_PATTERNS = (
-    (r"apache license(?:,? version)?\s*2(?:\.0)?", "Apache-2.0"),
+    # The stock Apache header wraps between "Apache License" and
+    # "Version 2.0", so the separator must tolerate newlines.
+    (r"apache license[\s,]*(?:version)?[\s]*2(?:\.0)?", "Apache-2.0"),
     (r"mit license", "MIT"),
     (r"gnu general public license.*version\s*3", "GPL-3.0-only"),
     (r"gnu general public license.*version\s*2", "GPL-2.0-only"),

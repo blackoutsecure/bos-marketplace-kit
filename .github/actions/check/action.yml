@@ -41,53 +41,53 @@ inputs:
       built-in best-practice defaults on; `false` forces them off and
       falls back to conservative runtime defaults.
     required: false
-    default: 'auto'
+    default: "auto"
   use_global_config:
     description: >-
       `auto` (default) loads the org-level global config when present.
       `true` requires it to exist; `false` disables discovery.
     required: false
-    default: 'auto'
+    default: "auto"
   global_config_path:
     description: >-
       Org/hub-level config path. Defaults to
       `.github/marketplace-kit-global-config.json`.
     required: false
-    default: ''
+    default: ""
   config_path:
     description: >-
       Repo config path. Empty (default) auto-discovers
       `.github/bos-universal-config.json`, `bos-universal-config.json`,
       `marketplace-kit.json`, then `.marketplace-kit.json`.
     required: false
-    default: ''
+    default: ""
 
   action_yml_path:
     description: >-
       Path to the action manifest to lint. Empty uses the config value
       (default `action.yml` at the repo root).
     required: false
-    default: ''
+    default: ""
   fail_on_warning:
     description: >-
       `true` to treat OP### warnings as failures (non-zero exit). MP###
       and SC### always fail. Empty uses the config value (default
       `false`).
     required: false
-    default: ''
+    default: ""
   skip_checks:
     description: >-
       Comma-separated list of check IDs to skip (e.g.
       `OP003,SC002`). Useful when migrating an existing repo into
       compliance gradually. Empty uses the config value.
     required: false
-    default: ''
+    default: ""
   actionlint_version:
     description: >-
       Version tag of actionlint to install. Pinned to a known-good
       release; override only with care.
     required: false
-    default: 'v1.7.7'
+    default: "v1.7.7"
   actionlint_sha256:
     description: >-
       SHA-256 of the `linux_amd64` tarball for `actionlint_version`.
@@ -95,7 +95,7 @@ inputs:
       Defaults pinned for `v1.7.7`. Override in lockstep with
       `actionlint_version` when bumping.
     required: false
-    default: '023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757'
+    default: "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757"
   actionlint_sha256_arm64:
     description: >-
       SHA-256 of the `linux_arm64` tarball for `actionlint_version`.
@@ -104,7 +104,7 @@ inputs:
       silicon, GitHub-hosted `*-arm` runners). Defaults pinned for
       `v1.7.7`.
     required: false
-    default: '401942f9c24ed71e4fe71b76c7d638f66d8633575c4016efd2977ce7c28317d0'
+    default: "401942f9c24ed71e4fe71b76c7d638f66d8633575c4016efd2977ce7c28317d0"
   actionlint_sha256_armv6:
     description: >-
       SHA-256 of the `linux_armv6` tarball for `actionlint_version`.
@@ -112,21 +112,21 @@ inputs:
       (actionlint does not ship a separate armv7 build — armv6 is
       forward-compatible to armv7). Defaults pinned for `v1.7.7`.
     required: false
-    default: '82e98d7252341b83fa557764824f225fa50431801b8e3d8e99f70dc1efc317b2'
+    default: "82e98d7252341b83fa557764824f225fa50431801b8e3d8e99f70dc1efc317b2"
   actionlint_sha256_386:
     description: >-
       SHA-256 of the `linux_386` tarball for `actionlint_version`.
       Validated when the runner reports `i386`/`i686`. Defaults pinned
       for `v1.7.7`.
     required: false
-    default: '01d4c173f411aeecf670d5219c008e07bf11539cf1181fdeee0cdb0eb8244aac'
+    default: "01d4c173f411aeecf670d5219c008e07bf11539cf1181fdeee0cdb0eb8244aac"
   workflow_dir:
     description: >-
       Directory of workflow files to lint with actionlint, if any
       exist on this branch. `auto` (default) uses the config value
       (`.github/workflows`). Set to '' to skip workflow linting.
     required: false
-    default: 'auto'
+    default: "auto"
 
   # ----- Community-health (CH###) options ----------------------------------
   # Each `require_*` input takes one of:
@@ -147,7 +147,7 @@ inputs:
       and CH/SC rules fall back to local-only detection, applying
       their `require_*` policy on missing files.
     required: false
-    default: ''
+    default: ""
   org_health_repo:
     description: >-
       `owner/.github` repository that holds the org's shared
@@ -155,41 +155,41 @@ inputs:
       `<github.repository_owner>/.github` when the calling workflow
       does not override.
     required: false
-    default: ''
+    default: ""
   check_org_health:
     description: >-
       `true` to consult the org `.github` repo for community-health
       files. `false` to check only the current repo. Default `true`.
     required: false
-    default: ''
+    default: ""
   require_security:
-    description: 'Policy for SECURITY.md (SC003). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for SECURITY.md (SC003). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_code_of_conduct:
-    description: 'Policy for CODE_OF_CONDUCT.md (CH001). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for CODE_OF_CONDUCT.md (CH001). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_contributing:
-    description: 'Policy for CONTRIBUTING.md (CH002). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for CONTRIBUTING.md (CH002). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_support:
-    description: 'Policy for SUPPORT.md (CH003). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for SUPPORT.md (CH003). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
   require_issue_templates:
-    description: 'Policy for issue templates (CH004). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for issue templates (CH004). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
   require_pr_template:
-    description: 'Policy for PR template (CH005). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for PR template (CH005). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
   require_funding:
-    description: 'Policy for FUNDING.yml (CH006). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for FUNDING.yml (CH006). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
 
   # ----- CH###/SC### source mode (where the file is expected to live) -----
   # Per-rule source-of-truth selector. Lets callers express *where*
@@ -212,49 +212,49 @@ inputs:
       file in this repo (org fallback disabled). `either` (default)
       checks local first, then falls back to the org repo.
     required: false
-    default: ''
+    default: ""
   security_source:
     description: >-
       Per-rule source for SECURITY.md (SC003). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   code_of_conduct_source:
     description: >-
       Per-rule source for CODE_OF_CONDUCT.md (CH001). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   contributing_source:
     description: >-
       Per-rule source for CONTRIBUTING.md (CH002). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   support_source:
     description: >-
       Per-rule source for SUPPORT.md (CH003). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   issue_templates_source:
     description: >-
       Per-rule source for issue templates (CH004). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   pr_template_source:
     description: >-
       Per-rule source for PR template (CH005). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
   funding_source:
     description: >-
-      Per-rule source for FUNDING.yml (CH006). One of `local`,
+      Per-rule source for FUNDING.yml (CH006, SP002). One of `local`,
       `inherit`, `either`, or empty (use `community_health_source`).
     required: false
-    default: ''
+    default: ""
 
   # ----- AI auto-generation (FUTURE / NOT YET IMPLEMENTED) ----------------
   auto_generate_missing:
@@ -267,7 +267,7 @@ inputs:
       warning and otherwise has no effect. The input is declared now
       so callers can opt in once the implementation lands.
     required: false
-    default: ''
+    default: ""
 
   # ----- Posture profile / scope ------------------------------------------
   profile:
@@ -278,7 +278,7 @@ inputs:
       from `warn` to `fail`. A global or repo config can still relax an
       individual rule on top of the profile. Empty uses the config value.
     required: false
-    default: ''
+    default: ""
   enable_security_scan:
     description: >-
       `true` (default) runs the security-posture rules (`SC###`,
@@ -286,7 +286,7 @@ inputs:
       group to `skip` in one switch — use it when a dedicated scanner
       owns security posture for the repo. Empty uses the config value.
     required: false
-    default: ''
+    default: ""
   defer_to_code_scanning_kit:
     description: >-
       `auto` (default) skips the rules that duplicate
@@ -294,7 +294,7 @@ inputs:
       PS001/PS002/PS003, MS001 -> PS013) when a workflow in this repo
       already calls that kit. `true` always defers; `false` never does.
     required: false
-    default: ''
+    default: ""
 
   # ----- AI-assisted findings summary ------------------------------------
   # Opportunistic: only used when a provider is reachable. Findings
@@ -306,25 +306,25 @@ inputs:
       a missing token or a provider error never fails the run. Empty uses
       the config value (default `true`).
     required: false
-    default: ''
+    default: ""
   ai_findings_summary_provider:
     description: >-
       `auto` (GitHub Models, then an OpenAI-compatible provider),
       `github-models`, `external`, or `none`. Empty uses the config value.
     required: false
-    default: ''
+    default: ""
   ai_model:
     description: >-
       Model identifier for the AI summary (e.g. `openai/gpt-4o-mini`).
       Empty uses the config value, then the provider default.
     required: false
-    default: ''
+    default: ""
   local_heuristic_fallback:
     description: >-
       `true` to emit deterministic local remediation whenever a model is
       unavailable or disabled. Empty uses the config value (default `true`).
     required: false
-    default: ''
+    default: ""
 
   # ----- DP/CQ/LT/GH/MS/SR rule policies ----------------------------------
   # Same `fail|warn|skip` semantics as the CH/SC rules above.
@@ -333,33 +333,33 @@ inputs:
   # doesn't break its CI on the first run.
 
   require_dependabot:
-    description: 'Policy for `.github/dependabot.yml` presence (DP001). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for `.github/dependabot.yml` presence (DP001). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_codeql:
-    description: 'Policy for a CodeQL workflow (CQ001). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for a CodeQL workflow (CQ001). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_editorconfig:
-    description: 'Policy for `.editorconfig` presence (LT001). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for `.editorconfig` presence (LT001). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_gitattributes:
-    description: 'Policy for `.gitattributes` presence (LT002). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for `.gitattributes` presence (LT002). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_gitignore:
-    description: 'Policy for `.gitignore` presence (LT003). One of `fail`, `warn`, `skip`. Default `warn`.'
+    description: "Policy for `.gitignore` presence (LT003). One of `fail`, `warn`, `skip`. Default `warn`."
     required: false
-    default: ''
+    default: ""
   require_markdownlint:
-    description: 'Policy for `.markdownlint.yaml`/`.markdownlint-cli2.yaml` presence (LT004). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for `.markdownlint.yaml`/`.markdownlint-cli2.yaml` presence (LT004). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
   require_yamllint:
-    description: 'Policy for `.yamllint.yml`/`.yamllint.yaml` presence (LT005). One of `fail`, `warn`, `skip`. Default `skip`.'
+    description: "Policy for `.yamllint.yml`/`.yamllint.yaml` presence (LT005). One of `fail`, `warn`, `skip`. Default `skip`."
     required: false
-    default: ''
+    default: ""
   require_ghas_code_scanning:
     description: >-
       Policy for "Code scanning" being enabled at the repo level
@@ -368,21 +368,21 @@ inputs:
       repos — leave this at `warn` or higher to catch the listing
       drifting out of compliance.
     required: false
-    default: ''
+    default: ""
   require_ghas_secret_scanning:
     description: >-
       Policy for "Secret scanning" being enabled at the repo level
       (GH002). Requires `github_token`. Default `warn`. Free on public
       repos. Set `skip` for private repos without GHAS licensing.
     required: false
-    default: ''
+    default: ""
   require_dependabot_alerts:
     description: >-
       Policy for "Dependabot alerts" being enabled at the repo level
       (GH003). Requires `github_token` with `Administration: read`
       (the alerts endpoint is admin-scoped). Default `warn`.
     required: false
-    default: ''
+    default: ""
   require_security_devops:
     description: >-
       Policy for the Microsoft Security DevOps workflow being present
@@ -391,7 +391,7 @@ inputs:
       Trivy/Checkov/Terrascan via the
       `microsoft/security-devops-action` wrapper.
     required: false
-    default: ''
+    default: ""
   require_scorecard:
     description: >-
       Policy for the OpenSSF Scorecard workflow being present (SR001).
@@ -399,7 +399,36 @@ inputs:
       want your repo scored at https://scorecard.dev. Free for public
       repos; produces a SARIF report uploaded to GHAS.
     required: false
-    default: ''
+    default: ""
+
+  # ----- SP### GitHub Sponsors --------------------------------------------
+  # Live account state, read via the GraphQL API. GitHub Sponsors has to
+  # be approved per account (personal or organization) before a listing
+  # exists and the Sponsor button can render, so a FUNDING.yml alone is
+  # not enough. Requires `github_token`.
+  require_sponsorship:
+    description: >-
+      Policy for the repository owner having an approved, published
+      GitHub Sponsors listing (SP001), a matching `github:` entry in a
+      FUNDING.yml GitHub actually reads (SP002), and a Sponsor button
+      that renders on the repo (SP003). One of `fail`, `warn`, `skip`.
+      Default `skip` — opt in when the listing is part of your release
+      checklist. Requires `github_token`; when the account is not
+      approved yet the finding links the GitHub docs for requesting
+      approval for a personal account or an organization, whichever the
+      owner is. SP002 reads `.github/FUNDING.yml` — the only path
+      GitHub honours for funding — in this repo, then in the owner's
+      `.github` repo, honouring `funding_source`.
+    required: false
+    default: ""
+  sponsorship_account:
+    description: >-
+      Login to check for a sponsors listing (SP001). Empty (default)
+      uses the repository owner. Set this when the Sponsor button
+      points at a different account than the repo owner (e.g. a
+      personal account funding an org's work).
+    required: false
+    default: ""
 
   # ----- RM### live repo "About" box ---------------------------------------
   # These rules query the live GitHub repo metadata
@@ -416,7 +445,7 @@ inputs:
       Default `warn`. Reads via `GET /repos/{owner}/{repo}` — needs
       only `metadata: read`, satisfied by the default `GITHUB_TOKEN`.
     required: false
-    default: ''
+    default: ""
   require_repo_homepage:
     description: >-
       Policy for the GitHub repo homepage (Website) being set
@@ -426,7 +455,7 @@ inputs:
       validated as http(s); a malformed URL is reported as `fail`
       regardless of this input.
     required: false
-    default: ''
+    default: ""
   require_repo_topics:
     description: >-
       Policy for the GitHub repo having at least one topic
@@ -435,7 +464,18 @@ inputs:
       violations (RM005) and the GitHub hard cap of 20 topics are
       reported as `fail` regardless of this input.
     required: false
-    default: ''
+    default: ""
+  require_repo_issues:
+    description: >-
+      Policy for the repo's Issues tab being enabled (RM006). One of
+      `fail`, `warn`, `skip`. Default `warn` — Issues is the support
+      channel Marketplace consumers are sent to, and with it off any
+      issue templates (CH004) are unreachable. Set `skip` when support
+      is handled elsewhere and documented in SUPPORT.md. The other
+      home-page tabs (Projects/Wiki/Pages/Discussions/Downloads) are
+      reported in the job summary but not audited.
+    required: false
+    default: ""
   repo_description_max_length:
     description: >-
       Hard upper bound for the GitHub repo description, in chars
@@ -444,32 +484,62 @@ inputs:
       the `repo-metadata` composite) would be rejected. Default
       `350`.
     required: false
-    default: ''
+    default: ""
   repo_description_min_length:
     description: >-
       Lower bound below which the repo description triggers a
       "too brief to be useful" warning (RM002). Default `30`. Set
       `0` to disable the lower-bound check.
     required: false
-    default: ''
+    default: ""
   version:
-    description: 'Public release version. `auto` derives it from the current release tag when available.'
+    description: "Public release version. `auto` derives it from the current release tag when available."
     required: false
-    default: ''
+    default: ""
   license:
-    description: 'SPDX license identifier. `auto` reads the repository LICENSE/COPYING file.'
+    description: "SPDX license identifier. `auto` reads the repository LICENSE/COPYING file."
     required: false
-    default: ''
-
+    default: ""
+  require_license_audit:
+    description: >-
+      Policy for the licence audit (LC001-LC006): SPDX resolution, OSI
+      approval, licence standing, drift across README/pyproject/package.json,
+      copyright notice, and the Apache-2.0 NOTICE. One of `fail`, `warn`,
+      `skip`. Default `warn` — licence choice is org policy, not a
+      Marketplace requirement (that is MP008). Checked against a vendored
+      snapshot of https://opensource.org/licenses; no network call.
+    required: false
+    default: ""
+  allowed_licenses:
+    description: >-
+      Comma-separated SPDX allowlist. When non-empty, any other identifier
+      is reported by LC002. Empty (default) accepts any OSI-approved licence.
+    required: false
+    default: ""
+  denied_licenses:
+    description: >-
+      Comma-separated SPDX denylist reported by LC002, evaluated before
+      `allowed_licenses`.
+    required: false
+    default: ""
+  license_catalogue_max_age_days:
+    description: >-
+      How old the vendored OSI snapshot (`osi-licenses.json`) may be, in
+      days, before LC002 reports that its approval verdict might be out of
+      date. Default `400`; `0` disables the check. The catalogue is
+      refreshed org-wide by the hub's `Refresh OSI licence catalogue`
+      workflow and fanned out by managed file sync.
+    required: false
+    default: ""
 outputs:
   passed:
-    description: 'Number of checks that passed.'
+    description: "Number of checks that passed."
     value: ${{ steps.run.outputs.passed }}
   failed:
-    description: 'Number of checks that failed.'
+    description: "Number of checks that failed."
     value: ${{ steps.run.outputs.failed }}
   warnings:
-    description: 'Number of OP-family warnings.'
+    description: "Number of OP-family warnings."
     value: ${{ steps.run.outputs.warnings }}
   report:
     description: >-
@@ -483,11 +553,11 @@ runs:
     - id: install
       shell: bash
       env:
-        AL_VERSION:        ${{ inputs.actionlint_version }}
-        AL_SHA256_AMD64:   ${{ inputs.actionlint_sha256 }}
-        AL_SHA256_ARM64:   ${{ inputs.actionlint_sha256_arm64 }}
-        AL_SHA256_ARMV6:   ${{ inputs.actionlint_sha256_armv6 }}
-        AL_SHA256_386:     ${{ inputs.actionlint_sha256_386 }}
+        AL_VERSION: ${{ inputs.actionlint_version }}
+        AL_SHA256_AMD64: ${{ inputs.actionlint_sha256 }}
+        AL_SHA256_ARM64: ${{ inputs.actionlint_sha256_arm64 }}
+        AL_SHA256_ARMV6: ${{ inputs.actionlint_sha256_armv6 }}
+        AL_SHA256_386: ${{ inputs.actionlint_sha256_386 }}
       run: |
         set -euo pipefail
         # Install actionlint into a scratch dir on PATH for this job.
@@ -561,57 +631,64 @@ runs:
       shell: bash
       env:
         MK_USE_MARKETPLACE_CONFIG: ${{ inputs.use_marketplace_config }}
-        MK_USE_GLOBAL_CONFIG:      ${{ inputs.use_global_config }}
-        MK_GLOBAL_CONFIG_PATH:     ${{ inputs.global_config_path }}
-        MK_CONFIG_PATH:            ${{ inputs.config_path }}
-        MK_IN_ACTION_YML_PATH:             ${{ inputs.action_yml_path }}
-        MK_IN_FAIL_ON_WARNING:             ${{ inputs.fail_on_warning }}
-        MK_IN_SKIP_CHECKS:                 ${{ inputs.skip_checks }}
-        MK_IN_WORKFLOW_DIR:                ${{ inputs.workflow_dir }}
-        MK_IN_CHECK_ORG_HEALTH:            ${{ inputs.check_org_health }}
-        MK_IN_ORG_HEALTH_REPO:             ${{ inputs.org_health_repo }}
-        MK_IN_COMMUNITY_HEALTH_SOURCE:     ${{ inputs.community_health_source }}
-        MK_IN_REQUIRE_SECURITY:            ${{ inputs.require_security }}
-        MK_IN_REQUIRE_CODE_OF_CONDUCT:     ${{ inputs.require_code_of_conduct }}
-        MK_IN_REQUIRE_CONTRIBUTING:        ${{ inputs.require_contributing }}
-        MK_IN_REQUIRE_SUPPORT:             ${{ inputs.require_support }}
-        MK_IN_REQUIRE_ISSUE_TEMPLATES:     ${{ inputs.require_issue_templates }}
-        MK_IN_REQUIRE_PR_TEMPLATE:         ${{ inputs.require_pr_template }}
-        MK_IN_REQUIRE_FUNDING:             ${{ inputs.require_funding }}
-        MK_IN_SECURITY_SOURCE:             ${{ inputs.security_source }}
-        MK_IN_CODE_OF_CONDUCT_SOURCE:      ${{ inputs.code_of_conduct_source }}
-        MK_IN_CONTRIBUTING_SOURCE:         ${{ inputs.contributing_source }}
-        MK_IN_SUPPORT_SOURCE:              ${{ inputs.support_source }}
-        MK_IN_ISSUE_TEMPLATES_SOURCE:      ${{ inputs.issue_templates_source }}
-        MK_IN_PR_TEMPLATE_SOURCE:          ${{ inputs.pr_template_source }}
-        MK_IN_FUNDING_SOURCE:              ${{ inputs.funding_source }}
-        MK_IN_REQUIRE_DEPENDABOT:          ${{ inputs.require_dependabot }}
-        MK_IN_REQUIRE_CODEQL:              ${{ inputs.require_codeql }}
-        MK_IN_REQUIRE_EDITORCONFIG:        ${{ inputs.require_editorconfig }}
-        MK_IN_REQUIRE_GITATTRIBUTES:       ${{ inputs.require_gitattributes }}
-        MK_IN_REQUIRE_GITIGNORE:           ${{ inputs.require_gitignore }}
-        MK_IN_REQUIRE_MARKDOWNLINT:        ${{ inputs.require_markdownlint }}
-        MK_IN_REQUIRE_YAMLLINT:            ${{ inputs.require_yamllint }}
-        MK_IN_REQUIRE_GHAS_CODE_SCANNING:  ${{ inputs.require_ghas_code_scanning }}
+        MK_USE_GLOBAL_CONFIG: ${{ inputs.use_global_config }}
+        MK_GLOBAL_CONFIG_PATH: ${{ inputs.global_config_path }}
+        MK_CONFIG_PATH: ${{ inputs.config_path }}
+        MK_IN_ACTION_YML_PATH: ${{ inputs.action_yml_path }}
+        MK_IN_FAIL_ON_WARNING: ${{ inputs.fail_on_warning }}
+        MK_IN_SKIP_CHECKS: ${{ inputs.skip_checks }}
+        MK_IN_WORKFLOW_DIR: ${{ inputs.workflow_dir }}
+        MK_IN_CHECK_ORG_HEALTH: ${{ inputs.check_org_health }}
+        MK_IN_ORG_HEALTH_REPO: ${{ inputs.org_health_repo }}
+        MK_IN_COMMUNITY_HEALTH_SOURCE: ${{ inputs.community_health_source }}
+        MK_IN_REQUIRE_SECURITY: ${{ inputs.require_security }}
+        MK_IN_REQUIRE_CODE_OF_CONDUCT: ${{ inputs.require_code_of_conduct }}
+        MK_IN_REQUIRE_CONTRIBUTING: ${{ inputs.require_contributing }}
+        MK_IN_REQUIRE_SUPPORT: ${{ inputs.require_support }}
+        MK_IN_REQUIRE_ISSUE_TEMPLATES: ${{ inputs.require_issue_templates }}
+        MK_IN_REQUIRE_PR_TEMPLATE: ${{ inputs.require_pr_template }}
+        MK_IN_REQUIRE_FUNDING: ${{ inputs.require_funding }}
+        MK_IN_SECURITY_SOURCE: ${{ inputs.security_source }}
+        MK_IN_CODE_OF_CONDUCT_SOURCE: ${{ inputs.code_of_conduct_source }}
+        MK_IN_CONTRIBUTING_SOURCE: ${{ inputs.contributing_source }}
+        MK_IN_SUPPORT_SOURCE: ${{ inputs.support_source }}
+        MK_IN_ISSUE_TEMPLATES_SOURCE: ${{ inputs.issue_templates_source }}
+        MK_IN_PR_TEMPLATE_SOURCE: ${{ inputs.pr_template_source }}
+        MK_IN_FUNDING_SOURCE: ${{ inputs.funding_source }}
+        MK_IN_REQUIRE_DEPENDABOT: ${{ inputs.require_dependabot }}
+        MK_IN_REQUIRE_CODEQL: ${{ inputs.require_codeql }}
+        MK_IN_REQUIRE_EDITORCONFIG: ${{ inputs.require_editorconfig }}
+        MK_IN_REQUIRE_GITATTRIBUTES: ${{ inputs.require_gitattributes }}
+        MK_IN_REQUIRE_GITIGNORE: ${{ inputs.require_gitignore }}
+        MK_IN_REQUIRE_MARKDOWNLINT: ${{ inputs.require_markdownlint }}
+        MK_IN_REQUIRE_YAMLLINT: ${{ inputs.require_yamllint }}
+        MK_IN_REQUIRE_GHAS_CODE_SCANNING: ${{ inputs.require_ghas_code_scanning }}
         MK_IN_REQUIRE_GHAS_SECRET_SCANNING: ${{ inputs.require_ghas_secret_scanning }}
-        MK_IN_REQUIRE_DEPENDABOT_ALERTS:   ${{ inputs.require_dependabot_alerts }}
-        MK_IN_REQUIRE_SECURITY_DEVOPS:     ${{ inputs.require_security_devops }}
-        MK_IN_REQUIRE_SCORECARD:           ${{ inputs.require_scorecard }}
-        MK_IN_REQUIRE_REPO_DESCRIPTION:    ${{ inputs.require_repo_description }}
-        MK_IN_REQUIRE_REPO_HOMEPAGE:       ${{ inputs.require_repo_homepage }}
-        MK_IN_REQUIRE_REPO_TOPICS:         ${{ inputs.require_repo_topics }}
+        MK_IN_REQUIRE_DEPENDABOT_ALERTS: ${{ inputs.require_dependabot_alerts }}
+        MK_IN_REQUIRE_SECURITY_DEVOPS: ${{ inputs.require_security_devops }}
+        MK_IN_REQUIRE_SCORECARD: ${{ inputs.require_scorecard }}
+        MK_IN_REQUIRE_SPONSORSHIP: ${{ inputs.require_sponsorship }}
+        MK_IN_SPONSORSHIP_ACCOUNT: ${{ inputs.sponsorship_account }}
+        MK_IN_REQUIRE_REPO_DESCRIPTION: ${{ inputs.require_repo_description }}
+        MK_IN_REQUIRE_REPO_HOMEPAGE: ${{ inputs.require_repo_homepage }}
+        MK_IN_REQUIRE_REPO_TOPICS: ${{ inputs.require_repo_topics }}
+        MK_IN_REQUIRE_REPO_ISSUES: ${{ inputs.require_repo_issues }}
         MK_IN_REPO_DESCRIPTION_MAX_LENGTH: ${{ inputs.repo_description_max_length }}
         MK_IN_REPO_DESCRIPTION_MIN_LENGTH: ${{ inputs.repo_description_min_length }}
-        MK_IN_VERSION:                     ${{ inputs.version }}
-        MK_IN_LICENSE:                     ${{ inputs.license }}
-        MK_IN_AUTO_GENERATE_MISSING:       ${{ inputs.auto_generate_missing }}
-        MK_IN_ENABLE_AI_FINDINGS_SUMMARY:  ${{ inputs.enable_ai_findings_summary }}
+        MK_IN_VERSION: ${{ inputs.version }}
+        MK_IN_LICENSE: ${{ inputs.license }}
+        MK_IN_REQUIRE_LICENSE_AUDIT: ${{ inputs.require_license_audit }}
+        MK_IN_ALLOWED_LICENSES: ${{ inputs.allowed_licenses }}
+        MK_IN_DENIED_LICENSES: ${{ inputs.denied_licenses }}
+        MK_IN_LICENSE_CATALOGUE_MAX_AGE_DAYS: ${{ inputs.license_catalogue_max_age_days }}
+        MK_IN_AUTO_GENERATE_MISSING: ${{ inputs.auto_generate_missing }}
+        MK_IN_ENABLE_AI_FINDINGS_SUMMARY: ${{ inputs.enable_ai_findings_summary }}
         MK_IN_AI_FINDINGS_SUMMARY_PROVIDER: ${{ inputs.ai_findings_summary_provider }}
-        MK_IN_AI_MODEL:                    ${{ inputs.ai_model }}
-        MK_IN_LOCAL_HEURISTIC_FALLBACK:    ${{ inputs.local_heuristic_fallback }}
-        MK_IN_PROFILE:                     ${{ inputs.profile }}
-        MK_IN_ENABLE_SECURITY_SCAN:        ${{ inputs.enable_security_scan }}
-        MK_IN_DEFER_TO_CODE_SCANNING_KIT:  ${{ inputs.defer_to_code_scanning_kit }}
+        MK_IN_AI_MODEL: ${{ inputs.ai_model }}
+        MK_IN_LOCAL_HEURISTIC_FALLBACK: ${{ inputs.local_heuristic_fallback }}
+        MK_IN_PROFILE: ${{ inputs.profile }}
+        MK_IN_ENABLE_SECURITY_SCAN: ${{ inputs.enable_security_scan }}
+        MK_IN_DEFER_TO_CODE_SCANNING_KIT: ${{ inputs.defer_to_code_scanning_kit }}
       run: |
         set -euo pipefail
         # `.github/actions/check` -> repo root -> bundled source tree.
@@ -626,9 +703,9 @@ runs:
       # exported to $GITHUB_ENV by the `config` step above. Only values
       # that come from the GitHub context or carry a secret stay here.
       env:
-        GH_TOKEN:    ${{ inputs.github_token }}
-        REPO_OWNER:  ${{ github.repository_owner }}
-        REPO_FULL:   ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        REPO_OWNER: ${{ github.repository_owner }}
+        REPO_FULL: ${{ github.repository }}
       # Delegated to a sibling script because the rendered template
       # of the inline body exceeded the GitHub Actions runner-side
       # 21000-char expression limit ("Exceeded max expression length
@@ -643,8 +720,8 @@ runs:
       if: always() && steps.run.outputs.report != ''
       shell: bash
       env:
-        MK_REPORT:        ${{ steps.run.outputs.report }}
-        GITHUB_TOKEN:     ${{ inputs.github_token }}
+        MK_REPORT: ${{ steps.run.outputs.report }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         set -euo pipefail
         python3 "${GITHUB_ACTION_PATH}/../../../src/marketplace_kit/summary.py"

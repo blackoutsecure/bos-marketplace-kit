@@ -19,7 +19,7 @@ from importlib import resources
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from . import __version__, ai, config, metadata
+from . import __version__, ai, config, license_authoring, licensing, metadata, osi_catalogue
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -499,7 +499,27 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             warns += 1
     print()
 
-    # 3. Publish-model branches.
+    # 3. Licence audit.
+    print("## Licence audit")
+    requirement = values.get("require_license_audit", "warn")
+    if requirement == "skip":
+        print("SKIP  LC     licence audit disabled via require_license_audit")
+    else:
+        audit = licensing.audit(
+            ".",
+            allowed=tuple(values.get("allowed_licenses", ())),
+            denied=tuple(values.get("denied_licenses", ())),
+        )
+        for finding in audit.findings:
+            status = requirement if finding.status == "warn" else finding.status
+            print(f"{status.upper():<5} {finding.rule_id:<6} {finding.message}")
+            if status == "fail":
+                fails += 1
+            elif status == "warn":
+                warns += 1
+    print()
+
+    # 4. Publish-model branches.
     print("## Branches")
     for branch in ("dev", "main"):
         if _branch_exists(branch):
@@ -514,6 +534,79 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         return 1
     if warns and (getattr(args, "fail_on_warning", False) or values["fail_on_warning"]):
         return 1
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# Subcommand: license
+# ---------------------------------------------------------------------------
+
+_LEGAL_NOTE = (
+    "Note: this is authoring and consistency tooling, not legal advice. "
+    "It aims to help you keep licence and copyright metadata accurate and "
+    "machine-readable. For anything that turns on legal interpretation, "
+    "talk to a lawyer."
+)
+
+
+def cmd_license(args: argparse.Namespace) -> int:
+    """Generate, repair, or re-attribute LICENSE and NOTICE."""
+    root = Path(".")
+
+    if args.list:
+        catalogue = licensing.catalogue()
+        print(f"# OSI-approved identifiers (snapshot {catalogue['snapshot']}, "
+              f"source {catalogue['source']})")
+        for identifier in license_authoring.supported():
+            body = catalogue["licenses"][identifier]
+            marker = " (deprecated by SPDX)" if body.get("deprecated") else ""
+            print(f"{identifier:<34} {body['category']:<16} "
+                  f"{body.get('reciprocity', 'unknown')}{marker}")
+        print(f"\n{len(license_authoring.supported())} identifiers available.")
+        return 0
+
+    if not args.generate and not args.fix and not args.holder:
+        sys.stderr.write(
+            "error: choose --list, --generate <SPDX>, --fix, or --holder\n")
+        return 2
+
+    # New holders merge with whatever the repo already claims, so adding a
+    # contributor never silently drops the existing attribution.
+    holders = license_authoring.existing_holders(root)
+    holders = list(osi_catalogue.merge_copyrights(
+        holders + license_authoring.parse_holder_args(args.holder)))
+    if not holders:
+        sys.stderr.write(
+            "error: no copyright holder found in the repo and none supplied — "
+            "pass --holder \"2026 Your Org\"\n")
+        return 2
+
+    results: list[license_authoring.Result] = []
+    if args.generate:
+        try:
+            results.extend(license_authoring.generate(
+                root, args.generate, holders, dry_run=args.dry_run))
+        except license_authoring.LicenseTextError as exc:
+            sys.stderr.write(f"error: {exc}\n")
+            return 2
+
+    if args.fix or args.holder:
+        targets = tuple(args.notice_file) or ("NOTICE",)
+        results.extend(license_authoring.rewrite_notices(
+            root, holders, files=targets, dry_run=args.dry_run))
+
+    print("# marketplace-kit license")
+    print()
+    print("Merged copyright roster:")
+    for holder in holders:
+        print(f"  {holder.render()}")
+    print()
+    for result in results:
+        print(f"{result.action.upper():<10} {result.path:<16} {result.detail}")
+    if args.dry_run:
+        print("\nDry run — nothing was written.")
+    print()
+    print(_LEGAL_NOTE)
     return 0
 
 
@@ -1121,6 +1214,24 @@ def _build_parser() -> argparse.ArgumentParser:
     p_doc.add_argument("--fail-on-warning", action="store_true",
         help="Exit non-zero if any rule warns.")
     p_doc.set_defaults(func=cmd_doctor)
+
+    p_lic = sub.add_parser("license",
+        help="Generate, repair, or re-attribute the repository LICENSE and NOTICE.")
+    p_lic.add_argument("--list", action="store_true",
+        help="List every OSI-approved identifier this kit can generate.")
+    p_lic.add_argument("--generate", metavar="SPDX", default=None,
+        help="Write a LICENSE for the given OSI identifier, e.g. `Apache-2.0`. "
+             "Fetches canonical text from the SPDX license list.")
+    p_lic.add_argument("--fix", action="store_true",
+        help="Merge and re-render existing copyright notices so every surface agrees.")
+    p_lic.add_argument("--holder", action="append", default=[], metavar="HOLDER",
+        help="Copyright holder, optionally with years: `\"2019-2021 Acme Corp\"`. "
+             "Repeat for several holders; they are merged with any already present.")
+    p_lic.add_argument("--notice-file", action="append", default=[], metavar="FILE",
+        help="File to rewrite with the merged notice. Default `NOTICE`. Repeatable.")
+    p_lic.add_argument("--dry-run", action="store_true",
+        help="Report what would change without writing.")
+    p_lic.set_defaults(func=cmd_license)
 
     p_di = sub.add_parser("doc-inputs",
         help="Emit a markdown table of inputs/outputs from an action.yml.")

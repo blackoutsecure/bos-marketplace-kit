@@ -75,9 +75,12 @@ validate_req require_ghas_secret_scanning "${REQ_GHAS_SECRET_SCANNING}"
 validate_req require_dependabot_alerts    "${REQ_DEPENDABOT_ALERTS}"
 validate_req require_security_devops      "${REQ_SECURITY_DEVOPS}"
 validate_req require_scorecard            "${REQ_SCORECARD}"
+validate_req require_sponsorship          "${REQ_SPONSORSHIP}"
 validate_req require_repo_description     "${REQ_REPO_DESCRIPTION}"
 validate_req require_repo_homepage        "${REQ_REPO_HOMEPAGE}"
 validate_req require_repo_topics          "${REQ_REPO_TOPICS}"
+validate_req require_repo_issues          "${REQ_REPO_ISSUES}"
+validate_req require_license_audit        "${REQ_LICENSE_AUDIT}"
 
 case "${REPO_DESC_MAX_LEN}" in
   ''|*[!0-9]*)
@@ -177,6 +180,17 @@ gh_api_file_exists() {
     -H "X-GitHub-Api-Version: 2022-11-28" \
     "https://api.github.com/repos/${ORG_HEALTH_REPO}/contents/${path}" 2>/dev/null || echo '000')"
   [ "${status}" = "200" ]
+}
+
+gh_api_file_raw() {
+  # Echo the raw contents of the given path in ORG_HEALTH_REPO.
+  local path="$1"
+  [ "${ORG_HEALTH_AVAILABLE}" = "true" ] || return 1
+  curl -sS --fail \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H "Accept: application/vnd.github.raw" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "https://api.github.com/repos/${ORG_HEALTH_REPO}/contents/${path}" 2>/dev/null
 }
 
 check_health_file() {
@@ -377,6 +391,24 @@ else
   record MP008 fail "no LICENSE file at the repo root — Marketplace policy requires one"
 fi
 
+# ----- LC001-LC006: licence audit ----------------------------------
+# MP008 only proves a file exists. The audit proves it resolves to a
+# real SPDX identifier, that the identifier is OSI-approved and in good
+# standing, and that every other surface in the repo agrees with it.
+# Checked against a vendored snapshot of https://opensource.org/licenses
+# — no network call, so the verdict is reproducible offline.
+LC_ROWS="$(python3 "${GITHUB_ACTION_PATH}/audit_license.py" . 2>/dev/null || true)"
+if [ -n "${LC_ROWS}" ]; then
+  while IFS='|' read -r lc_id lc_status lc_msg; do
+    [ -z "${lc_id}" ] && continue
+    record "${lc_id}" "${lc_status}" "${lc_msg}"
+  done <<< "${LC_ROWS}"
+else
+  for id in LC001 LC002 LC003 LC004 LC005 LC006; do
+    record "${id}" skip "licence audit did not run"
+  done
+fi
+
 # ----- MP009: NO workflow files (on the target branch) -------------
 # This check is most meaningful on `main`. On `dev` it'll be
 # noisy by design — every Action repo with CI will fail it.
@@ -566,8 +598,11 @@ check_health_file CH005 "pull-request template" "${REQ_PR_TEMPLATE}" "pr-templat
   ".github/pull_request_template.md" "docs/PULL_REQUEST_TEMPLATE.md"
 
 # ----- CH006: FUNDING.yml (org-aware) ------------------------------
+# Unlike the other community-health files, FUNDING.yml is only read
+# from `.github/FUNDING.yml` (repo default branch, or the owner's
+# `.github` repo) -- root and `docs/` copies are ignored by GitHub.
 check_health_file CH006 "FUNDING.yml" "${REQ_FUNDING}" "funding" "$(resolve_source "${SRC_FUNDING}")" \
-  ".github/FUNDING.yml" "FUNDING.yml"
+  ".github/FUNDING.yml"
 
 # ----- DP001: Dependabot config ------------------------------------
 # Dependabot is a per-repo config file; org-level dependabot doesn't
@@ -826,6 +861,195 @@ else
   record SR001 "${REQ_SCORECARD}" "no OpenSSF Scorecard workflow found -- scaffold via \`marketplace-kit generate-policy scorecard-workflow\` (free for public repos; results at https://scorecard.dev)"
 fi
 
+# ----- SP001-SP003: GitHub Sponsors --------------------------------
+# GitHub Sponsors is approved per account. Until the account is
+# approved and its listing published there is no Sponsor button, no
+# matter what FUNDING.yml says -- so the listing state is read live
+# from the GraphQL API rather than inferred from the repo tree.
+SPONSOR_LOGIN="${SPONSORSHIP_ACCOUNT}"
+if [ -z "${SPONSOR_LOGIN}" ]; then
+  SPONSOR_LOGIN="${REPO_OWNER:-}"
+fi
+
+sponsors_docs_url() {
+  # Args: account type (User | Organization | anything else)
+  if [ "${1}" = "Organization" ]; then
+    printf '%s' 'https://docs.github.com/sponsors/receiving-sponsorships-through-github-sponsors/setting-up-github-sponsors-for-your-organization'
+  else
+    printf '%s' 'https://docs.github.com/sponsors/receiving-sponsorships-through-github-sponsors/setting-up-github-sponsors-for-your-personal-account'
+  fi
+}
+
+SPONSOR_TYPE=""
+SPONSOR_LISTING=""
+SPONSOR_LINKS=""
+SPONSOR_LINKS_KNOWN="false"
+if [ "${REQ_SPONSORSHIP}" != "skip" ] && [ -n "${GH_TOKEN}" ] && [ -n "${SPONSOR_LOGIN}" ]; then
+  # One round trip for both the account listing and the repo's rendered
+  # funding links (`fundingLinks` is empty whenever Settings > General >
+  # Features > Sponsorships is off, whatever FUNDING.yml says).
+  SPONSOR_QUERY_BODY="$(python3 -c '
+import json, sys
+query = ("query($login:String!,$owner:String!,$name:String!){"
+         "repositoryOwner(login:$login){__typename"
+         " ... on User{hasSponsorsListing}"
+         " ... on Organization{hasSponsorsListing}}"
+         "repository(owner:$owner,name:$name){fundingLinks{platform url}}}")
+login, full = sys.argv[1], sys.argv[2]
+owner, _, name = full.partition("/")
+print(json.dumps({"query": query, "variables": {
+    "login": login, "owner": owner, "name": name}}))
+' "${SPONSOR_LOGIN}" "${REPO_FULL:-/}")"
+  SPONSOR_JSON="$(curl -sS -X POST \
+    -H "Authorization: Bearer ${GH_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    -d "${SPONSOR_QUERY_BODY}" \
+    "https://api.github.com/graphql" 2>/dev/null || echo '')"
+  SPONSOR_FIELDS="$(printf '%s' "${SPONSOR_JSON}" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin).get("data") or {}
+except Exception:
+    sys.exit(0)
+owner = data.get("repositoryOwner") or {}
+print(owner.get("__typename") or "")
+listing = owner.get("hasSponsorsListing")
+print("true" if listing is True else "false" if listing is False else "")
+repo = data.get("repository")
+print("true" if isinstance(repo, dict) else "false")
+links = (repo or {}).get("fundingLinks") or []
+print(" ".join(link.get("platform", "") for link in links if link.get("platform")))
+' 2>/dev/null || true)"
+  SPONSOR_TYPE="$(printf '%s\n' "${SPONSOR_FIELDS}" | sed -n '1p')"
+  SPONSOR_LISTING="$(printf '%s\n' "${SPONSOR_FIELDS}" | sed -n '2p')"
+  SPONSOR_LINKS_KNOWN="$(printf '%s\n' "${SPONSOR_FIELDS}" | sed -n '3p')"
+  SPONSOR_LINKS="$(printf '%s\n' "${SPONSOR_FIELDS}" | sed -n '4p')"
+fi
+
+SPONSOR_KIND="account"
+case "${SPONSOR_TYPE}" in
+  Organization) SPONSOR_KIND="organization" ;;
+  User)         SPONSOR_KIND="personal" ;;
+esac
+
+# SP001: the account has an approved, published sponsors listing.
+if [ "${REQ_SPONSORSHIP}" = "skip" ]; then
+  record SP001 skip "GitHub Sponsors check disabled via require_sponsorship"
+elif [ -z "${GH_TOKEN}" ]; then
+  record SP001 skip "GitHub Sponsors: no github_token -- skipped (pass \`github_token\` to enable)"
+elif [ -z "${SPONSOR_LOGIN}" ]; then
+  record SP001 skip "GitHub Sponsors: no account to check -- set \`sponsorship_account\`"
+elif [ -z "${SPONSOR_LISTING}" ]; then
+  record SP001 "${REQ_SPONSORSHIP}" "GitHub Sponsors lookup for \`${SPONSOR_LOGIN}\` failed -- the GraphQL API returned no sponsors data (check the login and that the token can read it)"
+elif [ "${SPONSOR_LISTING}" = "true" ]; then
+  record SP001 pass "GitHub Sponsors listing published for the ${SPONSOR_KIND} account \`${SPONSOR_LOGIN}\`"
+else
+  record SP001 "${REQ_SPONSORSHIP}" "GitHub Sponsors is not approved yet for the ${SPONSOR_KIND} account \`${SPONSOR_LOGIN}\` -- no listing exists, so the Sponsor button will not render. Request approval: $(sponsors_docs_url "${SPONSOR_TYPE}")"
+fi
+
+# SP002: FUNDING.yml routes the Sponsor button at that same account.
+# An approved listing still needs `github: <login>` in a FUNDING.yml
+# GitHub actually reads. That is `.github/FUNDING.yml` on the default
+# branch -- and only there. Root and `docs/` copies are honoured for
+# other community-health files but ignored for funding, so they are
+# detected and reported as misplaced. The owner's `.github` repo
+# (`<user>/.github` or `<org>/.github`) supplies the default for every
+# repo of that account that has none of its own.
+FUNDING_PATH=".github/FUNDING.yml"
+FUNDING_IGNORED_PATHS=("FUNDING.yml" "docs/FUNDING.yml")
+
+parse_funding_logins() {
+  # Read a FUNDING.yml on stdin, echo its `github:` logins space-separated.
+  python3 -c '
+import re, sys
+QUOTES = chr(34) + chr(39)
+logins, collecting = [], False
+for line in sys.stdin.read().splitlines():
+    stripped = line.strip()
+    if collecting:
+        if stripped.startswith("- "):
+            logins.append(stripped[2:])
+            continue
+        collecting = False
+    match = re.match(r"^github:\s*(.*)$", stripped)
+    if not match:
+        continue
+    value = match.group(1).split("#", 1)[0].strip()
+    if not value:
+        collecting = True
+    elif value.startswith("["):
+        logins.extend(value.strip("[]").split(","))
+    else:
+        logins.append(value)
+print(" ".join(part for part in (p.strip().strip(QUOTES) for p in logins) if part))
+' 2>/dev/null || true
+}
+
+FUNDING_SRC="$(resolve_source "${SRC_FUNDING}")"
+FUNDING_FILE=""
+FUNDING_ORIGIN=""
+FUNDING_LOGINS=""
+if [ "${FUNDING_SRC}" != "inherit" ] && [ -e "${FUNDING_PATH}" ]; then
+  FUNDING_FILE="${FUNDING_PATH}"
+  FUNDING_ORIGIN="local"
+  FUNDING_LOGINS="$(parse_funding_logins < "${FUNDING_PATH}")"
+fi
+if [ -z "${FUNDING_FILE}" ] && [ "${FUNDING_SRC}" != "local" ] && [ "${ORG_HEALTH_AVAILABLE}" = "true" ]; then
+  FUNDING_RAW="$(gh_api_file_raw "${FUNDING_PATH}" || true)"
+  if [ -n "${FUNDING_RAW}" ]; then
+    FUNDING_FILE="${ORG_HEALTH_REPO}/${FUNDING_PATH}"
+    FUNDING_ORIGIN="inherited"
+    FUNDING_LOGINS="$(printf '%s' "${FUNDING_RAW}" | parse_funding_logins)"
+  fi
+fi
+
+# Copies GitHub will never read, reported so a "missing" finding is
+# actionable rather than baffling.
+FUNDING_MISPLACED=""
+for f in "${FUNDING_IGNORED_PATHS[@]}"; do
+  if [ -e "${f}" ]; then
+    FUNDING_MISPLACED="${FUNDING_MISPLACED} ${f}"
+  fi
+done
+FUNDING_MISPLACED="$(printf '%s' "${FUNDING_MISPLACED}" | sed -E 's/^[[:space:]]+//')"
+if [ -n "${FUNDING_MISPLACED}" ]; then
+  FUNDING_MISPLACED_HINT=" (found at \`${FUNDING_MISPLACED}\`, which GitHub ignores for funding -- move it to \`${FUNDING_PATH}\`)"
+else
+  FUNDING_MISPLACED_HINT=""
+fi
+
+if [ "${REQ_SPONSORSHIP}" = "skip" ]; then
+  record SP002 skip "Sponsor button wiring check disabled via require_sponsorship"
+elif [ "${SPONSOR_LISTING}" != "true" ]; then
+  record SP002 skip "no published sponsors listing to wire up (see SP001)"
+elif [ -z "${FUNDING_FILE}" ]; then
+  record SP002 "${REQ_SPONSORSHIP}" "\`${SPONSOR_LOGIN}\` has a sponsors listing but no \`${FUNDING_PATH}\` exists here or in \`${ORG_HEALTH_REPO:-<owner>/.github}\`${FUNDING_MISPLACED_HINT} -- run \`marketplace-kit generate-policy funding\` and add \`github: ${SPONSOR_LOGIN}\`"
+elif printf '%s' " ${FUNDING_LOGINS} " | tr '[:upper:]' '[:lower:]' | grep -qF " $(printf '%s' "${SPONSOR_LOGIN}" | tr '[:upper:]' '[:lower:]') "; then
+  record SP002 pass "\`${FUNDING_FILE}\` (${FUNDING_ORIGIN}) routes the Sponsor button at \`${SPONSOR_LOGIN}\`"
+elif [ -z "${FUNDING_LOGINS}" ]; then
+  record SP002 "${REQ_SPONSORSHIP}" "\`${FUNDING_FILE}\` (${FUNDING_ORIGIN}) declares no \`github:\` entry -- add \`github: ${SPONSOR_LOGIN}\` so the Sponsor button points at the approved listing"
+else
+  record SP002 "${REQ_SPONSORSHIP}" "\`${FUNDING_FILE}\` (${FUNDING_ORIGIN}) points \`github:\` at \`${FUNDING_LOGINS}\`, not the approved account \`${SPONSOR_LOGIN}\` -- align them or set \`sponsorship_account\`"
+fi
+
+# SP003: the Sponsor button actually renders on this repo.
+# `Repository.fundingLinks` is the rendered result, so it catches the
+# case FUNDING.yml cannot show: Settings > General > Features >
+# Sponsorships switched off, which hides the button repo-wide.
+if [ "${REQ_SPONSORSHIP}" = "skip" ]; then
+  record SP003 skip "Sponsor button rendering check disabled via require_sponsorship"
+elif [ -z "${GH_TOKEN}" ]; then
+  record SP003 skip "Sponsor button rendering: no github_token -- skipped"
+elif [ "${SPONSOR_LINKS_KNOWN}" != "true" ]; then
+  record SP003 skip "Sponsor button rendering: \`fundingLinks\` not readable for \`${REPO_FULL:-this repo}\`"
+elif [ -n "${SPONSOR_LINKS}" ]; then
+  record SP003 pass "Sponsor button renders on \`${REPO_FULL}\` (platforms: ${SPONSOR_LINKS})"
+elif [ -n "${FUNDING_FILE}" ]; then
+  record SP003 "${REQ_SPONSORSHIP}" "funding config exists (\`${FUNDING_FILE}\`, ${FUNDING_ORIGIN}) but \`${REPO_FULL}\` renders no funding links -- enable Settings > General > Features > Sponsorships, and check the file is on the repo's default branch"
+else
+  record SP003 skip "no funding config and no rendered funding links (see SP002)"
+fi
+
 # ----- RM001-RM005: live repo "About" box (description/homepage/topics) -
 # Validates what the public sees in the sidebar — the same fields
 # the companion `repo-metadata` composite writes on release.
@@ -841,7 +1065,7 @@ REPO_DESC_LEN=0
 
 rm_skip_all() {
   local reason="$1"
-  for id in RM001 RM002 RM003 RM004 RM005; do
+  for id in RM001 RM002 RM003 RM004 RM005 RM006; do
     record "${id}" skip "${reason}"
   done
 }
@@ -983,6 +1207,20 @@ print(b("has_downloads"))
       record RM005 pass "all ${REPO_TOPICS_COUNT} repo topic(s) match GitHub format rules"
     fi
   fi
+
+  # ----- RM006: Issues tab enabled --------------------------------
+  # The other home-page tabs (Projects/Wiki/Pages/Discussions/
+  # Downloads) are reported in the job summary but left unaudited --
+  # they are maintainer preference. Issues is different: it is the
+  # support channel Marketplace consumers are sent to, and with it
+  # off the CH004 issue templates are dead weight.
+  if [ "${REQ_REPO_ISSUES}" = "skip" ]; then
+    record RM006 skip "repo Issues tab check disabled via require_repo_issues"
+  elif [ "${REPO_HAS_ISSUES}" = "true" ]; then
+    record RM006 pass "repo Issues tab enabled"
+  else
+    record RM006 "${REQ_REPO_ISSUES}" "repo Issues tab is disabled -- Marketplace consumers have no support channel and any issue templates are unreachable; enable at Settings > General > Features, or point users elsewhere in SUPPORT.md and set \`require_repo_issues: skip\`"
+  fi
 fi
 
 # ----- Aggregate + emit -------------------------------------------
@@ -1093,6 +1331,8 @@ SORTED_REPORT="$(sort -t'|' -k1,1 "${REPORT_FILE}")"
     echo "| Delegated rules | ${MK_CONFIG_SUPPRESSED} |"
   fi
 
+  echo ""
+  echo "_Licence findings (\`LC###\`) are automated consistency checks against the [OSI approved-licence list](https://opensource.org/licenses). We are not lawyers and this is not legal advice — the aim is to catch licence metadata that is missing, stale, or contradicts itself. Anything turning on legal interpretation belongs with qualified counsel._"
   echo ""
   echo "Generated by [bos-marketplace-kit](https://github.com/blackoutsecure/bos-marketplace-kit)."
 } >> "${GITHUB_STEP_SUMMARY:-/dev/stderr}"

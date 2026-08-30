@@ -59,11 +59,10 @@ select = ["E", "F", "W", "I", "UP", "B", "C4"]
 ignore = ["E501"]
 
 [tool.hatch.build.targets.wheel]
+# `packages` already carries every file under the package directory,
+# data files included. A force-include of the same paths makes hatchling
+# fail the build on a duplicate archive entry.
 packages = ["src/marketplace_kit"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/marketplace_kit/data/policies" = "marketplace_kit/data/policies"
-"src/marketplace_kit/data/marketplace-kit-marketplace-config.json" = "marketplace_kit/data/marketplace-kit-marketplace-config.json"
 
 [tool.hatch.build.targets.sdist]
 include = [
