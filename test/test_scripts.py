@@ -75,7 +75,7 @@ def test_shell_script_clean_under_shellcheck_errors(script: Path) -> None:
     # stricter warning-level lint separately.
     result = subprocess.run(
         ["shellcheck", "-x", "-S", "error", "--shell=bash", str(script)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     assert result.returncode == 0, (
         f"{script}: shellcheck error:\n{result.stdout}"

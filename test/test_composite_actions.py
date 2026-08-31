@@ -142,14 +142,14 @@ def test_bash_steps_clean_under_shellcheck_errors(action_path: Path) -> None:
         pytest.skip(f"{action_path}: no bash steps")
     for idx, body in steps:
         with tempfile.NamedTemporaryFile(
-            mode="w", suffix=f"_{idx}.sh", delete=False
+            mode="w", suffix=f"_{idx}.sh", delete=False, encoding="utf-8", newline="\n"
         ) as tmp:
             tmp.write("#!/usr/bin/env bash\nset -euo pipefail\n")
             tmp.write(body)
             tmp_path = tmp.name
         result = subprocess.run(
             ["shellcheck", "-x", "-S", "error", "--shell=bash", tmp_path],
-            capture_output=True, text=True,
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
         )
         Path(tmp_path).unlink(missing_ok=True)
         assert result.returncode == 0, (
@@ -203,7 +203,7 @@ def test_external_bash_scripts_clean_under_shellcheck_errors(sh_path: Path) -> N
     """Every external .sh helper must be clean under ``shellcheck -S error``."""
     result = subprocess.run(
         ["shellcheck", "-x", "-S", "error", "--shell=bash", str(sh_path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
     )
     assert result.returncode == 0, (
         f"{sh_path}: shellcheck error:\n{result.stdout}"
