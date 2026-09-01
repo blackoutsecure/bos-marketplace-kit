@@ -104,26 +104,26 @@ name: Security scan
   workflow_dispatch:
     inputs:
       fail_on:
-        description: 'Kit composite fail policy (`fail` | `never`).'
+        description: "Kit composite fail policy (`fail` | `never`)."
         required: false
         type: choice
-        default: 'never'
-        options: ['never', 'fail']
+        default: "never"
+        options: ["never", "fail"]
       advanced_scanning:
-        description: 'Enable advanced posture probes (PS002/PS003) via SCANNING_PAT.'
+        description: "Enable advanced posture probes (PS002/PS003) via SCANNING_PAT."
         required: false
         type: boolean
         default: false
       require_pat:
-        description: 'Fail fast if advanced_scanning is requested but SCANNING_PAT is not configured.'
+        description: "Fail fast if advanced_scanning is requested but SCANNING_PAT is not configured."
         required: false
         type: boolean
         default: false
       http_timeout:
-        description: 'Per-request HTTP timeout (seconds) for kit posture probes. Default 20. Bump on slow self-hosted egress or GH API latency spikes.'
+        description: "Per-request HTTP timeout (seconds) for kit posture probes. Default 20. Bump on slow self-hosted egress or GH API latency spikes."
         required: false
         type: string
-        default: '20'
+        default: "20"
 
 permissions:
   contents: read
@@ -156,7 +156,7 @@ jobs:
           INPUT_REQUIRE_PAT: ${{ github.event_name == 'workflow_dispatch' && inputs.require_pat && 'true' || '' }}
           VAR_ADVANCED: ${{ vars['BOS_SCAN_ADVANCED'] }}
           VAR_REQUIRE_PAT: ${{ vars['BOS_SCAN_REQUIRE_PAT'] }}
-          HAS_APP: ${{ vars.SECURITY_AUDIT_APP_ID != '' && 'true' || 'false' }}
+          HAS_APP: ${{ vars.GATEWALL_APP_ID != '' && 'true' || 'false' }}
           HAS_PAT: ${{ secrets['SCANNING_PAT'] != '' && 'true' || 'false' }}
         run: |
           set -euo pipefail
@@ -228,12 +228,12 @@ jobs:
       actions: read
     with:
       enable_kit_composite: true
-      enable_posture:       true
-      enable_scanners:      true
-      enable_upload:        true
-      fail_on:              ${{ inputs.fail_on || 'never' }}
-      use_advanced_pat:     ${{ needs.preflight.outputs.use_advanced_pat == 'true' }}
-      kit_http_timeout:     ${{ inputs.http_timeout || '20' }}
-      codeql_languages:     '["python", "actions"]'
-      codeql_queries:       security-and-quality
+      enable_posture: true
+      enable_scanners: true
+      enable_upload: true
+      fail_on: ${{ inputs.fail_on || 'never' }}
+      use_advanced_pat: ${{ needs.preflight.outputs.use_advanced_pat == 'true' }}
+      kit_http_timeout: ${{ inputs.http_timeout || '20' }}
+      codeql_languages: '["python", "actions"]'
+      codeql_queries: security-and-quality
     secrets: inherit
