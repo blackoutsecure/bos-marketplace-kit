@@ -156,6 +156,7 @@ jobs:
           INPUT_REQUIRE_PAT: ${{ github.event_name == 'workflow_dispatch' && inputs.require_pat && 'true' || '' }}
           VAR_ADVANCED: ${{ vars['BOS_SCAN_ADVANCED'] }}
           VAR_REQUIRE_PAT: ${{ vars['BOS_SCAN_REQUIRE_PAT'] }}
+          HAS_APP: ${{ vars.SECURITY_AUDIT_APP_ID != '' && 'true' || 'false' }}
           HAS_PAT: ${{ secrets['SCANNING_PAT'] != '' && 'true' || 'false' }}
         run: |
           set -euo pipefail
@@ -182,17 +183,17 @@ jobs:
           fi
 
           use_advanced_pat=false
-          if [ "${advanced_requested}" = "true" ] && [ "${HAS_PAT}" = "true" ]; then
+          if [ "${advanced_requested}" = "true" ] && { [ "${HAS_APP}" = "true" ] || [ "${HAS_PAT}" = "true" ]; }; then
             use_advanced_pat=true
           fi
 
-          if [ "${advanced_requested}" = "true" ] && [ "${HAS_PAT}" != "true" ] && [ "${require_pat}" = "true" ]; then
-            echo "::error::Advanced scanning was requested, but secret SCANNING_PAT is not configured."
+          if [ "${advanced_requested}" = "true" ] && [ "${HAS_APP}" != "true" ] && [ "${HAS_PAT}" != "true" ] && [ "${require_pat}" = "true" ]; then
+            echo "::error::Advanced scanning was requested, but no security-audit App or legacy PAT is configured."
             exit 1
           fi
 
-          if [ "${advanced_requested}" = "true" ] && [ "${HAS_PAT}" != "true" ]; then
-            echo "::warning::Advanced scanning requested but SCANNING_PAT is missing. Falling back to GITHUB_TOKEN (PS002/PS003 will be skipped)."
+          if [ "${advanced_requested}" = "true" ] && [ "${HAS_APP}" != "true" ] && [ "${HAS_PAT}" != "true" ]; then
+            echo "::warning::Advanced scanning requested without a security-audit App. Falling back to GITHUB_TOKEN."
           fi
 
           echo "use_advanced_pat=${use_advanced_pat}" >> "${GITHUB_OUTPUT}"
