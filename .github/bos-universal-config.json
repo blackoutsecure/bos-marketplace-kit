@@ -1,4 +1,15 @@
 {
+  "triggers": {
+    "push_paths": [
+      "action.yml",
+      "src/**",
+      ".github/actions/**",
+      "scripts/**",
+      "test/**",
+      "docs/**",
+      "pyproject.toml"
+    ]
+  },
   "marketplace": {
     "enabled": true,
     "target_branch": "main",
