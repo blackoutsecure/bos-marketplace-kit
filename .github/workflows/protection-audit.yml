@@ -1,11 +1,9 @@
 name: Trusted branch protection audit
 
 "on":
-  push:
-    branches: [ci/trusted-protection-bootstrap-02d00e1b]
-  pull_request_target:
-    branches: [dev]
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: [Marketplace PR checks]
+    types: [completed]
   workflow_dispatch:
     inputs:
       pull_number:
@@ -17,21 +15,19 @@ permissions:
   contents: read
 
 jobs:
-  register:
-    name: Register trusted audit workflow
-    if: github.event_name == 'push'
+  audit:
+    name: Authorize and assess main from trusted code
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      head_sha: ${{ steps.pull.outputs.head_sha }}
+      pull_number: ${{ steps.pull.outputs.pull_number }}
     steps:
-      - shell: bash
-        run: |
-          set -euo pipefail
-          echo "Registration only; no App credential is used on this bootstrap push."
-  authorize:
-    name: Authorize protection audit
-    if: github.event_name != 'push'
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    steps:
+      # Job-only reruns must authorize the current actor again before using the App.
       - name: Mint dispatcher authorization token
         id: authz
         if: github.event_name == 'workflow_dispatch' && vars.GATEKEEPER_APP_ID != ''
@@ -49,20 +45,8 @@ jobs:
           repository: ${{ github.repository }}
           allow_org_admin: true
           fail_closed: true
-          token: ${{ steps.authz.outputs.token || secrets.GATEKEEPER_AUTHZ_PAT }}
+          token: ${{ github.event_name == 'workflow_dispatch' && (steps.authz.outputs.token || secrets.GATEKEEPER_AUTHZ_PAT) || '' }}
 
-  audit:
-    name: Assess main from trusted code
-    needs: authorize
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      head_sha: ${{ steps.pull.outputs.head_sha }}
-      pull_number: ${{ steps.pull.outputs.pull_number }}
-    steps:
       - name: Resolve the current open PR
         id: pull
         shell: bash
@@ -70,9 +54,18 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          PULL_NUMBER: ${{ github.event.pull_request.number || inputs.pull_number }}
+          PULL_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || inputs.pull_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          UPSTREAM_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
+          if [[ -z "${PULL_NUMBER}" && "${EVENT_NAME}" == "workflow_run" ]]; then
+            [[ "${UPSTREAM_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::The upstream commit is invalid."; exit 1; }
+            gh api "repos/${REPOSITORY}/commits/${UPSTREAM_SHA}/pulls?per_page=100" > "${RUNNER_TEMP}/pull-candidates.json"
+            PULL_NUMBER="$(jq -r --arg repo "${REPOSITORY}" --arg base "${DEFAULT_BRANCH}" \
+              '[.[] | select(.state == "open" and .base.repo.full_name == $repo and .base.ref == $base)] | if length == 1 then .[0].number else empty end' \
+              "${RUNNER_TEMP}/pull-candidates.json")"
+          fi
           [[ "${PULL_NUMBER}" =~ ^[1-9][0-9]*$ ]] || { echo "::error::A positive PR number is required."; exit 1; }
           pull="$(gh api "repos/${REPOSITORY}/pulls/${PULL_NUMBER}" --jq '[.head.sha,.base.repo.full_name,.base.ref,.state]|@tsv')"
           IFS=$'\t' read -r head_sha base_repo base_ref state <<< "${pull}"
@@ -156,7 +149,9 @@ jobs:
               "output": {
                   "title": "Protection assessed" if passed else "Protection Not Assessed",
                   "summary": "Trusted read-only audit completed; drift remains advisory."
-                      if passed else "The trusted protection audit did not complete successfully.",
+                      + "\n\n[Audit run](" + os.environ["RUN_URL"] + ")"
+                      if passed else "The trusted protection audit did not complete successfully. "
+                      + "[Audit run](" + os.environ["RUN_URL"] + ")",
               },
           }, sys.stdout)
           PY
