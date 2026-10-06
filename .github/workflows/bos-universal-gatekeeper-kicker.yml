@@ -140,7 +140,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && vars.GATEKEEPER_APP_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app-id: ${{ vars.GATEKEEPER_APP_ID }}
+          client-id: ${{ vars.GATEKEEPER_APP_ID }}
           private-key: ${{ secrets.GATEKEEPER_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
@@ -294,7 +294,7 @@ jobs:
     runs-on: ${{ fromJSON(startsWith(vars.DEFAULT_RUNNER || 'ubuntu-latest', '[') && (vars.DEFAULT_RUNNER || 'ubuntu-latest') || format('"{0}"', vars.DEFAULT_RUNNER || 'ubuntu-latest')) }}
     timeout-minutes: 2
     outputs:
-      target_ref: ${{ steps.target_ref.outputs.ref }}
+      target_ref: ${{ steps.target_ref.outputs.ref || steps.target_ref_shared.outputs.ref }}
     steps:
       - name: Checkout hub resolver
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -304,11 +304,22 @@ jobs:
           # promoted consumer main branch resolves against hub main.
           ref: ${{ github.ref_name == 'main' && 'main' || 'dev' }}
           path: hub-runtime
-          sparse-checkout: .github/actions/resolve-hub-ref
+          sparse-checkout: |
+            .github/actions/resolve-hub-ref
+            .github/actions/shared/resolve-hub-ref
           sparse-checkout-cone-mode: false
-      - name: Resolve target hub ref
+          persist-credentials: false
+      - name: Resolve target hub ref (flattened layout)
         id: target_ref
+        if: hashFiles('hub-runtime/.github/actions/resolve-hub-ref/action.yml') != ''
         uses: ./hub-runtime/.github/actions/resolve-hub-ref
+        with:
+          event_name: ${{ github.event_name }}
+          ref_name: ${{ github.ref_name }}
+      - name: Resolve target hub ref (nested layout)
+        id: target_ref_shared
+        if: hashFiles('hub-runtime/.github/actions/resolve-hub-ref/action.yml') == ''
+        uses: ./hub-runtime/.github/actions/shared/resolve-hub-ref
         with:
           event_name: ${{ github.event_name }}
           ref_name: ${{ github.ref_name }}
@@ -372,7 +383,7 @@ jobs:
     runs-on: ${{ fromJSON(startsWith(vars.DEFAULT_RUNNER || 'ubuntu-latest', '[') && (vars.DEFAULT_RUNNER || 'ubuntu-latest') || format('"{0}"', vars.DEFAULT_RUNNER || 'ubuntu-latest')) }}
     timeout-minutes: 2
     outputs:
-      cfg: ${{ steps.config.outputs.cfg }}
+      cfg: ${{ steps.config_flat.outputs.cfg || steps.config_nested.outputs.cfg }}
       target_ref: ${{ needs.resolve-target-ref.outputs.target_ref }}
       operation: ${{ steps.dispatch.outputs.operation }}
       force_run: ${{ steps.dispatch.outputs.force }}
@@ -383,9 +394,27 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Load universal config
-        id: config
-        uses: blackoutsecure/bos-automation-hub/.github/actions/universal-config@main
+      - name: Checkout hub config action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: blackoutsecure/bos-automation-hub
+          ref: main
+          path: hub-config-runtime
+          sparse-checkout: |
+            .github/actions/universal-config
+            .github/actions/shared/universal-config
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Load universal config (flattened layout)
+        id: config_flat
+        if: hashFiles('hub-config-runtime/.github/actions/universal-config/action.yml') != ''
+        uses: ./hub-config-runtime/.github/actions/universal-config
+        with:
+          config_path: .github/bos-universal-config.json
+      - name: Load universal config (nested layout)
+        id: config_nested
+        if: hashFiles('hub-config-runtime/.github/actions/universal-config/action.yml') == '' && hashFiles('hub-config-runtime/.github/actions/shared/universal-config/action.yml') != ''
+        uses: ./hub-config-runtime/.github/actions/shared/universal-config
         with:
           config_path: .github/bos-universal-config.json
       # Maps each trigger (and, for `schedule`, each individual cron via
@@ -400,7 +429,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
           DISPATCH_OPERATION: ${{ inputs.operation }}
           DISPATCH_FORCE: ${{ inputs.force_run }}
-          PUSH_FORCE: ${{ fromJson(steps.config.outputs.cfg).triggers.force_on_push }}
+          PUSH_FORCE: ${{ fromJson(steps.config_flat.outputs.cfg || steps.config_nested.outputs.cfg).triggers.force_on_push }}
         run: |
           set -euo pipefail
           operation=full
@@ -479,8 +508,11 @@ jobs:
   # `action_test` config block.
   action-test:
     name: Action test
-    needs: parse-config
-    if: always() && !cancelled() && needs.parse-config.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.operation == 'action_test'
+    needs: [parse-config, preflight]
+    if: >-
+      always() && !cancelled() && needs.parse-config.result == 'success'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && github.event_name == 'workflow_dispatch' && inputs.operation == 'action_test'
     permissions:
       contents: read
       models: read
@@ -491,8 +523,11 @@ jobs:
   # pipeline that normally carries the `repo_metadata` stage.
   metadata:
     name: Repository metadata
-    needs: parse-config
-    if: always() && !cancelled() && needs.parse-config.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.operation == 'metadata'
+    needs: [parse-config, preflight]
+    if: >-
+      always() && !cancelled() && needs.parse-config.result == 'success'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && github.event_name == 'workflow_dispatch' && inputs.operation == 'metadata'
     permissions:
       contents: read
       models: read
@@ -500,6 +535,7 @@ jobs:
     with:
       description: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description || '' }}
       description_mode: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description_mode || 'auto' }}
+      description_fallback: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description_fallback || '' }}
       homepage: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.homepage || '' }}
       topics: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.topics || '' }}
       generate_topics: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.generate_topics == true }}
@@ -516,8 +552,11 @@ jobs:
   # exists so a maintainer can re-validate on demand from one place.
   marketplace-validate:
     name: Marketplace validation
-    needs: parse-config
-    if: always() && !cancelled() && needs.parse-config.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.operation == 'marketplace_validate'
+    needs: [parse-config, preflight]
+    if: >-
+      always() && !cancelled() && needs.parse-config.result == 'success'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && github.event_name == 'workflow_dispatch' && inputs.operation == 'marketplace_validate'
     permissions:
       contents: read
     uses: blackoutsecure/bos-automation-hub/.github/workflows/bos-universal-marketplace.yml@main
@@ -530,8 +569,11 @@ jobs:
   # branch, tag it, and publish the GitHub Release.
   marketplace-release:
     name: Marketplace release
-    needs: parse-config
-    if: always() && !cancelled() && needs.parse-config.result == 'success' && github.event_name == 'workflow_dispatch' && inputs.operation == 'marketplace_release'
+    needs: [parse-config, preflight]
+    if: >-
+      always() && !cancelled() && needs.parse-config.result == 'success'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && github.event_name == 'workflow_dispatch' && inputs.operation == 'marketplace_release'
     permissions:
       contents: write
       models: read
@@ -549,12 +591,13 @@ jobs:
   # routed by their own jobs further down rather than through this stage.
   release-dev:
     name: Release (dev)
-    needs: parse-config
+    needs: [parse-config, preflight]
     if: >-
       always()
       && !cancelled()
       && needs.parse-config.result == 'success'
-      && github.ref_name == 'dev'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && needs.parse-config.outputs.target_ref == 'dev'
       && (github.event_name != 'workflow_dispatch' || inputs.operation == 'full' || inputs.operation == 'release_only' || inputs.operation == 'security_only')
     permissions:
       contents: write # monitor tracking-file commit + GitHub Release publish
@@ -740,12 +783,13 @@ jobs:
 
   release-main:
     name: Release (main)
-    needs: parse-config
+    needs: [parse-config, preflight]
     if: >-
       always()
       && !cancelled()
       && needs.parse-config.result == 'success'
-      && github.ref_name == 'main'
+      && (needs.preflight.result == 'success' || needs.preflight.result == 'skipped')
+      && needs.parse-config.outputs.target_ref == 'main'
       && (github.event_name != 'workflow_dispatch' || inputs.operation == 'full' || inputs.operation == 'release_only' || inputs.operation == 'security_only')
     permissions:
       contents: write # monitor tracking-file commit + GitHub Release publish
@@ -915,6 +959,8 @@ jobs:
 
       enable_repo_metadata: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.enable == true }}
       repo_metadata_description: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description || '' }}
+      repo_metadata_description_mode: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description_mode || 'auto' }}
+      repo_metadata_description_fallback: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.description_fallback || '' }}
       repo_metadata_homepage: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.homepage || '' }}
       repo_metadata_topics: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.topics || '' }}
       repo_metadata_generate_topics: ${{ fromJson(needs.parse-config.outputs.cfg).repo_metadata.generate_topics == true }}
@@ -940,13 +986,13 @@ jobs:
       - release-dev
       - release-main
     if: always() && github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(startsWith(vars.DEFAULT_RUNNER || 'ubuntu-latest', '[') && (vars.DEFAULT_RUNNER || 'ubuntu-latest') || format('"{0}"', vars.DEFAULT_RUNNER || 'ubuntu-latest')) }}
     timeout-minutes: 2
     steps:
       - name: Verify selected route executed
         env:
           OPERATION: ${{ inputs.operation }}
-          TARGET_REF: ${{ github.ref_name }}
+          TARGET_REF: ${{ needs.parse-config.outputs.target_ref }}
           PARSE_RESULT: ${{ needs.parse-config.result }}
           SYNC_DEV_RESULT: ${{ needs.sync-check-dev.result }}
           SYNC_MAIN_RESULT: ${{ needs.sync-check-main.result }}
