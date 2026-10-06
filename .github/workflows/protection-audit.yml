@@ -15,12 +15,19 @@ permissions:
   contents: read
 
 jobs:
-  authorize:
-    name: Authorize protection audit
+  audit:
+    name: Authorize and assess main from trusted code
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      head_sha: ${{ steps.pull.outputs.head_sha }}
+      pull_number: ${{ steps.pull.outputs.pull_number }}
     steps:
+      # Job-only reruns must authorize the current actor again before using the App.
       - name: Mint dispatcher authorization token
         id: authz
         if: github.event_name == 'workflow_dispatch' && vars.GATEKEEPER_APP_ID != ''
@@ -38,20 +45,8 @@ jobs:
           repository: ${{ github.repository }}
           allow_org_admin: true
           fail_closed: true
-          token: ${{ steps.authz.outputs.token || secrets.GATEKEEPER_AUTHZ_PAT }}
+          token: ${{ github.event_name == 'workflow_dispatch' && (steps.authz.outputs.token || secrets.GATEKEEPER_AUTHZ_PAT) || '' }}
 
-  audit:
-    name: Assess main from trusted code
-    needs: authorize
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      head_sha: ${{ steps.pull.outputs.head_sha }}
-      pull_number: ${{ steps.pull.outputs.pull_number }}
-    steps:
       - name: Resolve the current open PR
         id: pull
         shell: bash

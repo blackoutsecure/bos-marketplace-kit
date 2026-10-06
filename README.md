@@ -1954,7 +1954,9 @@ workflow. It never checks out PR-head code: the default-branch comparator reads
 protection with an attenuated App token, then a separate job publishes the real
 result against the inspected PR commit. Missing or forbidden data is **Not Assessed**
 and fails; assessed drift retains its advisory policy. Manual audits retain
-Gatekeeper authorization. Automatic audits follow the completed PR workflow via
+Gatekeeper authorization.
+Authorization runs inside the audit job so a job-only rerun rechecks the current
+triggering actor before minting the protection token. Automatic audits follow the completed PR workflow via
 `workflow_run`, so Dependabot and fork PRs do not inherit the restricted upstream
 token or secret context. No upstream artifact or PR-head code is executed. The
 trusted workflow must be installed on the base branch before automatic audits run.

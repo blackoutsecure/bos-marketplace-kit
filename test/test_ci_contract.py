@@ -64,8 +64,16 @@ def test_required_checks_have_pr_producers() -> None:
     assert '"conclusion": "success" if passed else "failure"' in report
     assert '"head_sha": os.environ["HEAD_SHA"]' in report
     audit = trusted["jobs"]["audit"]
-    assert audit["needs"] == "authorize"
     assert audit["permissions"] == {"contents": "read", "pull-requests": "read"}
+    authorization_index = next(
+        index for index, step in enumerate(audit["steps"])
+        if step.get("uses", "").startswith("blackoutsecure/bos-workflow-gatekeeper@")
+    )
+    protection_index = next(
+        index for index, step in enumerate(audit["steps"]) if step.get("id") == "protection"
+    )
+    assert authorization_index < protection_index
+    assert audit["steps"][authorization_index]["with"]["actor"] == "${{ github.triggering_actor || github.actor }}"
     checkout = next(step for step in audit["steps"] if step.get("uses", "").startswith("actions/checkout@"))
     assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
     assert checkout["with"]["persist-credentials"] is False
@@ -110,7 +118,9 @@ def test_trusted_audit_resolves_fork_pr_associations_without_head_code(tmp_path:
     workflow = yaml.safe_load(
         (ROOT / ".github/workflows/protection-audit.yml").read_text(encoding="utf-8")
     )
-    source = workflow["jobs"]["audit"]["steps"][0]["run"]
+    source = next(
+        step["run"] for step in workflow["jobs"]["audit"]["steps"] if step.get("id") == "pull"
+    )
     bash = shutil.which("bash")
     assert bash is not None, "The existing shell contract suite requires Bash."
     fake_bin = tmp_path / "bin"
