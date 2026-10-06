@@ -1941,13 +1941,17 @@ Exit codes: `0` clean, `1` a rule failed (or warned with
 
 ## ⚠️ Runtime and repository notes
 
-[Marketplace PR checks](https://github.com/blackoutsecure/bos-marketplace-kit/blob/dev/.github/workflows/ci.yml) preserves the seven check names
+[Marketplace PR checks](https://github.com/blackoutsecure/bos-marketplace-kit/blob/dev/.github/workflows/ci.yml) preserve the seven check names
 required by `dev` branch protection. It runs the real CLI tests, Ruff, CodeQL,
 lint, self-check, branding, and read-only branch-protection inspection on every
 PR; the Gatekeeper remains the release and maintenance dispatcher. Do not remove
 these producers while their check contexts are required.
 The self-check inherits warning handling from the existing configuration cascade;
 development-workflow findings remain visible and are not silently discarded.
+Branch-protection inspection uses the existing Gatewall App with repository-scoped
+Administration-read access. Missing credentials or unreadable protection data
+fail as **Not Assessed**, rather than returning a green advisory result. Fork
+PRs cannot access that App credential and require a trusted maintainer run.
 
 - **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to

@@ -112,9 +112,37 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Mint read-only protection audit token
+        id: audit
+        if: >-
+          vars.GATEWALL_APP_ID != ''
+          && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GATEWALL_APP_ID }}
+          private-key: ${{ secrets.GATEWALL_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+          permission-contents: read
+      - name: Require assessable protection data
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.audit.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "::error::Branch protection is Not Assessed: a repository-scoped Administration-read App token is required."
+            exit 1
+          fi
+          if ! gh api "repos/${REPOSITORY}/branches/main/protection" --silent; then
+            echo "::error::Branch protection is Not Assessed: protection data could not be read."
+            exit 1
+          fi
       - uses: ./.github/actions/branch-protection
         with:
-          github_token: ${{ github.token }}
+          github_token: ${{ steps.audit.outputs.token }}
           mode: check
           # Preserve the previous self-check's advisory drift policy.
           severity: warn
