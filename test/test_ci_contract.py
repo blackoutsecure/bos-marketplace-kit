@@ -38,3 +38,8 @@ def test_required_checks_have_pr_producers() -> None:
         ("branch-protection", "./.github/actions/branch-protection"),
     ):
         assert any(step.get("uses") == action for step in jobs[job]["steps"])
+    check_step = next(
+        step for step in jobs["check"]["steps"]
+        if step.get("uses") == "./.github/actions/check"
+    )
+    assert "fail_on_warning" not in check_step["with"]

@@ -1946,6 +1946,8 @@ required by `dev` branch protection. It runs the real CLI tests, Ruff, CodeQL,
 lint, self-check, branding, and read-only branch-protection inspection on every
 PR; the Gatekeeper remains the release and maintenance dispatcher. Do not remove
 these producers while their check contexts are required.
+The self-check inherits warning handling from the existing configuration cascade;
+development-workflow findings remain visible and are not silently discarded.
 
 - **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to

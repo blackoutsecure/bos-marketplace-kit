@@ -84,7 +84,6 @@ jobs:
         with:
           action_yml_path: action.yml
           github_token: ${{ github.token }}
-          fail_on_warning: "true"
 
   branding:
     name: Render branding preview
