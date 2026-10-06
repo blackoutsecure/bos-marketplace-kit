@@ -71,6 +71,7 @@ previews, and a local CLI that runs the same checks offline.
   - [🏷️ Versioning](#️-versioning)
   - [🤝 Contributing](#-contributing)
   - [📜 License](#-license)
+  - [Security & secrets](#security--secrets)
 
 ## 📋 Prerequisites
 

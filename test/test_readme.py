@@ -89,6 +89,7 @@ def test_readme_section_order_matches_the_kit_layout() -> None:
         "🏷️ Versioning",
         "🤝 Contributing",
         "📜 License",
+        "Security & secrets",
     ]
     assert _sections(README.read_text(encoding="utf-8")) == expected
 

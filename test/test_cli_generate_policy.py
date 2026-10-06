@@ -283,7 +283,6 @@ def test_no_mutual_exclusion_warning_when_sibling_absent(
 
 @pytest.mark.parametrize("kind", [
     "codeql-workflow",
-    "scorecard-workflow",
     "security-devops-workflow",
     "code-scan-workflow",
 ])
@@ -294,3 +293,18 @@ def test_generated_workflows_honour_default_runner(kind: str) -> None:
     assert "vars.DEFAULT_RUNNER" in out
     assert "'ubuntu-latest'" in out, "fallback label must remain"
     assert "runs-on: ubuntu-latest" not in out
+
+
+def test_scorecard_workflow_uses_a_literal_ubuntu_runner() -> None:
+    rc, out, err = _run(
+        ["generate-policy", "scorecard-workflow", "--owner", "acme", "--stdout"]
+    )
+    assert rc == 0, err
+    repository_workflow = (
+        Path(__file__).resolve().parents[1] / ".github/workflows/scorecard.yml"
+    ).read_text(encoding="utf-8")
+    for workflow in (out, repository_workflow):
+        assert workflow.count("    runs-on: ubuntu-latest\n") == 1
+        assert "vars.DEFAULT_RUNNER" not in workflow
+        assert "publish_results: true" in workflow
+        assert "id-token: write" in workflow

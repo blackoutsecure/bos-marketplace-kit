@@ -537,6 +537,10 @@ Token-Permissions, etc.) and publishes the result at
 
 - **Default:** `skip`.
 - **Generator:** `marketplace-kit generate-policy scorecard-workflow`.
+- The publishing verifier requires a literal `runs-on: ubuntu-latest`.
+  This template intentionally does not use `vars.DEFAULT_RUNNER`; expression
+  and matrix runners are rejected even when they resolve to Ubuntu. See the
+  [Scorecard workflow restrictions](https://github.com/ossf/scorecard-action#workflow-restrictions).
 - Recommended for public Marketplace actions — your Scorecard becomes
   a public quality signal alongside the Marketplace listing.
 
