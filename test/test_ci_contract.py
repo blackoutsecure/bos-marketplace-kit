@@ -62,6 +62,7 @@ def test_required_checks_have_pr_producers() -> None:
     assert '"head_sha": os.environ["HEAD_SHA"]' in report
     audit = trusted["jobs"]["audit"]
     assert audit["needs"] == "authorize"
+    assert audit["permissions"] == {"contents": "read", "pull-requests": "read"}
     checkout = next(step for step in audit["steps"] if step.get("uses", "").startswith("actions/checkout@"))
     assert checkout["with"]["ref"] == "${{ github.event.repository.default_branch }}"
     assert checkout["with"]["persist-credentials"] is False
