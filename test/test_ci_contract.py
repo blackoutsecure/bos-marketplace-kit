@@ -35,7 +35,6 @@ def test_required_checks_have_pr_producers() -> None:
         ("check", "./.github/actions/check"),
         ("branding", "./.github/actions/branding-preview"),
         ("lint", "./.github/actions/lint"),
-        ("branch-protection", "./.github/actions/branch-protection"),
     ):
         assert any(step.get("uses") == action for step in jobs[job]["steps"])
     check_step = next(
@@ -44,17 +43,14 @@ def test_required_checks_have_pr_producers() -> None:
     )
     assert "fail_on_warning" not in check_step["with"]
     protection_steps = jobs["branch-protection"]["steps"]
-    audit = next(step for step in protection_steps if step.get("id") == "audit")
-    assert audit["with"]["permission-administration"] == "read"
-    assert audit["with"]["permission-contents"] == "read"
-    assert audit["with"]["repositories"] == "${{ github.event.repository.name }}"
     probe = next(
-        step for step in protection_steps if step.get("name") == "Require assessable protection data"
+        step for step in protection_steps if "run" in step
     )
+    assert probe["env"]["GH_TOKEN"] == "${{ github.token }}"
+    assert "secrets." not in str(protection_steps)
+    assert "create-github-app-token" not in str(protection_steps)
     assert "Not Assessed" in probe["run"]
-    assert 'gh api "repos/${REPOSITORY}/branches/main/protection" --silent' in probe["run"]
+    assert "gh api graphql" in probe["run"]
+    assert 'python3 "${helper}" from-graphql' in probe["run"]
+    assert 'python3 "${helper}" compare' in probe["run"]
     assert "exit 1" in probe["run"]
-    protection = next(
-        step for step in protection_steps if step.get("uses") == "./.github/actions/branch-protection"
-    )
-    assert protection["with"]["github_token"] == "${{ steps.audit.outputs.token }}"

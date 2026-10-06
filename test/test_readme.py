@@ -1,9 +1,9 @@
 """Documentation and lint gates that run inside the normal pytest job.
 
-CI for this repo is driven by hub-managed workflow kickers, so the
-drift gates live here rather than as extra workflow steps: the generated
-README tables must match `action.yml`, and the Python sources must be
-ruff-clean when ruff is available.
+The repository PR workflow and hub-managed maintenance both exercise these
+contracts: generated README tables must match `action.yml`, and Python sources
+must be ruff-clean when ruff is available. The PR workflow also invokes the
+drift and Ruff commands explicitly.
 """
 
 from __future__ import annotations

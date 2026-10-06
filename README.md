@@ -1948,10 +1948,10 @@ PR; the Gatekeeper remains the release and maintenance dispatcher. Do not remove
 these producers while their check contexts are required.
 The self-check inherits warning handling from the existing configuration cascade;
 development-workflow findings remain visible and are not silently discarded.
-Branch-protection inspection uses the existing Gatewall App with repository-scoped
-Administration-read access. Missing credentials or unreadable protection data
-fail as **Not Assessed**, rather than returning a green advisory result. Fork
-PRs cannot access that App credential and require a trusted maintainer run.
+Branch-protection inspection uses read-only GraphQL metadata and the existing
+shared protection comparator, without any App key or privileged token in PR
+code. Missing, forbidden, or malformed data fails as **Not Assessed** instead
+of returning a green advisory result. Assessed drift retains its advisory policy.
 
 - **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to

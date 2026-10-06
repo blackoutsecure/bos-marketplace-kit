@@ -14,6 +14,58 @@ from contextlib import redirect_stdout
 from pathlib import Path
 
 import bp_helper as bp  # type: ignore[import-not-found]  # noqa: E402
+import pytest
+
+
+def _graphql_payload(**changes: object) -> dict[str, object]:
+    rule: dict[str, object] = {
+        "requiresApprovingReviews": True,
+        "requiredApprovingReviewCount": 1,
+        "dismissesStaleReviews": True,
+        "requiresCodeOwnerReviews": True,
+        "requireLastPushApproval": False,
+        "requiresStatusChecks": True,
+        "requiredStatusCheckContexts": [],
+        "requiresStrictStatusChecks": True,
+        "requiresLinearHistory": True,
+        "lockBranch": False,
+        "allowsForcePushes": False,
+        "allowsDeletions": False,
+        "requiresConversationResolution": True,
+        "requiresCommitSignatures": False,
+        "isAdminEnforced": False,
+    }
+    rule.update(changes)
+    return {"data": {"repository": {"ref": {"branchProtectionRule": rule}}}}
+
+
+def test_graphql_data_uses_the_existing_protection_comparator() -> None:
+    current = bp.from_graphql(_graphql_payload())
+    assert bp.compare(bp.build_payload({}), current) == []
+    drift = bp.from_graphql(_graphql_payload(allowsForcePushes=True))
+    assert "allow_force_pushes: want=False got=True" in bp.compare(bp.build_payload({}), drift)
+
+
+@pytest.mark.parametrize("response", [
+    {},
+    {"errors": [{"message": "Resource not accessible"}]},
+    {"data": {"repository": None}},
+    {"data": {"repository": {"ref": None}}},
+    {"data": {"repository": {"ref": {"branchProtectionRule": None}}}},
+    _graphql_payload(allowsForcePushes="false"),
+    _graphql_payload(requiredApprovingReviewCount=True),
+    _graphql_payload(requiredStatusCheckContexts=["CI", 1]),
+])
+def test_graphql_missing_or_invalid_data_is_not_assessed(response: object) -> None:
+    with pytest.raises(ValueError):
+        bp.from_graphql(response)
+
+
+def test_graphql_cli_fails_without_assessable_data(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    source = tmp_path / "response.json"
+    source.write_text('{"errors":[{"message":"forbidden"}]}', encoding="utf-8")
+    assert bp.main(["from-graphql", "--input", str(source)]) == 1
+    assert "Not Assessed" in capsys.readouterr().err
 
 # ---------------------------------------------------------------------------
 # parse_status_checks
