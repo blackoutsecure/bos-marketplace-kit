@@ -3,7 +3,7 @@
 Complements the read-only `LC###` audit: where that reports, this fixes.
 
 Any of the OSI-approved identifiers in the vendored catalogue is
-supported. Licence *text* is not vendored — 155 full texts would bloat
+supported. Licence *text* is not vendored — full texts would bloat
 every consumer for a file most repos need once — so `--generate` fetches
 it from the SPDX license list at the moment you ask for it. That is a
 deliberate split: **verdicts stay offline and reproducible, authoring may

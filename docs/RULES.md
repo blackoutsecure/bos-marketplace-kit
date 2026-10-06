@@ -242,7 +242,7 @@ and `LF001`-`LF004` in [`bos-code-scanning-kit`][csk].
 ### Fixing what the audit finds
 
 `marketplace-kit license` is the write side of `LC###`. It supports every
-OSI-approved identifier in the catalogue — 155 at the current snapshot,
+OSI-approved identifier in the catalogue — 157 at the current snapshot,
 not a hardcoded shortlist:
 
 ```bash
@@ -265,7 +265,7 @@ different files. Notices are merged per holder (case-insensitively) and
 their years unioned and collapsed into ranges, so `2019`, `2020-2021`
 and `2024` for one holder render as `2019-2021, 2024`.
 
-Licence _text_ is not vendored — 155 full texts would bloat every
+Licence _text_ is not vendored — full texts would bloat every
 consumer for a file most repos need once — so `--generate` fetches it
 from the SPDX license list when you ask. That split is deliberate:
 **verdicts stay offline and reproducible; authoring may reach the
@@ -537,6 +537,10 @@ Token-Permissions, etc.) and publishes the result at
 
 - **Default:** `skip`.
 - **Generator:** `marketplace-kit generate-policy scorecard-workflow`.
+- The publishing verifier requires a literal `runs-on: ubuntu-latest`.
+  This template intentionally does not use `vars.DEFAULT_RUNNER`; expression
+  and matrix runners are rejected even when they resolve to Ubuntu. See the
+  [Scorecard workflow restrictions](https://github.com/ossf/scorecard-action#workflow-restrictions).
 - Recommended for public Marketplace actions — your Scorecard becomes
   a public quality signal alongside the Marketplace listing.
 

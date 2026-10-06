@@ -56,11 +56,14 @@ locally; `python3 .github/actions/check/scan_sc001.py <files>` runs the `SC001` 
 
 ## Validating changes
 
-CI is driven by hub-managed kickers, not per-repo test workflows. This repository ships only
-`.github/workflows/bos-universal-gatekeeper-kicker.yml` (the single dispatch front door into
-the hub's reusable release, security, sync, action-test, metadata, and Marketplace
-pipelines) and `.github/workflows/scorecard.yml`. The lint and documentation drift gates
-therefore live inside `pytest` — see the docstring of `test/test_readme.py`.
+Release and maintenance use `.github/workflows/bos-universal-gatekeeper-kicker.yml`.
+PR validation also runs `.github/workflows/ci.yml`, which restores the existing
+CLI/pytest/Ruff, CodeQL, lint, self-check and branding contexts. The seventh required
+context is published by `.github/workflows/protection-audit.yml` from a trusted
+default-branch checkout, never PR-head code. Keep these producers until branch protection is
+deliberately migrated; do not remove the checks to unblock a PR. Scorecard remains in
+`.github/workflows/scorecard.yml`. The lint and documentation drift tests are also
+covered by `pytest` — see the docstring of `test/test_readme.py`.
 
 Run narrowest first: `pytest test/<the-file-you-touched>.py`, then the full `pytest`, then
 `ruff check src test scripts` and `render_readme_inputs.py --check` if you skipped the dev

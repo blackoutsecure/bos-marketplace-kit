@@ -1,0 +1,158 @@
+name: Trusted branch protection audit
+
+"on":
+  workflow_run:
+    workflows: [Marketplace PR checks]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      pull_number:
+        description: Open pull request targeting the default branch to assess.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: Authorize and assess main from trusted code
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      head_sha: ${{ steps.pull.outputs.head_sha }}
+      pull_number: ${{ steps.pull.outputs.pull_number }}
+    steps:
+      # Job-only reruns must authorize the current actor again before using the App.
+      - name: Mint dispatcher authorization token
+        id: authz
+        if: github.event_name == 'workflow_dispatch' && vars.GATEKEEPER_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GATEKEEPER_APP_ID }}
+          private-key: ${{ secrets.GATEKEEPER_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          permission-members: read
+      - uses: blackoutsecure/bos-workflow-gatekeeper@c06e9fa7a60a75a3a1c8a8913b361fc39fc7dc35 # v1.0.3
+        with:
+          actor: ${{ github.triggering_actor || github.actor }}
+          event_name: ${{ github.event_name }}
+          organization: ${{ github.repository_owner }}
+          repository: ${{ github.repository }}
+          allow_org_admin: true
+          fail_closed: true
+          token: ${{ github.event_name == 'workflow_dispatch' && (steps.authz.outputs.token || secrets.GATEKEEPER_AUTHZ_PAT) || '' }}
+
+      - name: Resolve the current open PR
+        id: pull
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PULL_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number || inputs.pull_number }}
+          EVENT_NAME: ${{ github.event_name }}
+          UPSTREAM_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PULL_NUMBER}" && "${EVENT_NAME}" == "workflow_run" ]]; then
+            [[ "${UPSTREAM_SHA}" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::The upstream commit is invalid."; exit 1; }
+            gh api "repos/${REPOSITORY}/commits/${UPSTREAM_SHA}/pulls?per_page=100" > "${RUNNER_TEMP}/pull-candidates.json"
+            PULL_NUMBER="$(jq -r --arg repo "${REPOSITORY}" --arg base "${DEFAULT_BRANCH}" \
+              '[.[] | select(.state == "open" and .base.repo.full_name == $repo and .base.ref == $base)] | if length == 1 then .[0].number else empty end' \
+              "${RUNNER_TEMP}/pull-candidates.json")"
+          fi
+          [[ "${PULL_NUMBER}" =~ ^[1-9][0-9]*$ ]] || { echo "::error::A positive PR number is required."; exit 1; }
+          pull="$(gh api "repos/${REPOSITORY}/pulls/${PULL_NUMBER}" --jq '[.head.sha,.base.repo.full_name,.base.ref,.state]|@tsv')"
+          IFS=$'\t' read -r head_sha base_repo base_ref state <<< "${pull}"
+          [[ "${head_sha}" =~ ^[0-9a-f]{40}$ && "${base_repo}" == "${REPOSITORY}" && "${base_ref}" == "${DEFAULT_BRANCH}" && "${state}" == "open" ]] || {
+            echo "::error::The audit requires an open PR targeting this repository default branch."
+            exit 1
+          }
+          echo "head_sha=${head_sha}" >> "${GITHUB_OUTPUT}"
+          echo "pull_number=${PULL_NUMBER}" >> "${GITHUB_OUTPUT}"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Mint read-only protection token
+        id: protection
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.GATEWALL_APP_ID }}
+          private-key: ${{ secrets.GATEWALL_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: read
+          permission-contents: read
+      - name: Read and compare actual protection
+        shell: bash
+        env:
+          GH_TOKEN: ${{ steps.protection.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          helper=".github/actions/branch-protection/_bp.py"
+          if ! gh api "repos/${REPOSITORY}/branches/main/protection" > "${RUNNER_TEMP}/protection-current.json"; then
+            echo "::error::Branch protection is Not Assessed: the trusted audit could not read protection data."
+            exit 1
+          fi
+          python3 "${helper}" build --pretty > "${RUNNER_TEMP}/protection-desired.json"
+          drift="$(python3 "${helper}" compare \
+            --desired "${RUNNER_TEMP}/protection-desired.json" \
+            --current "${RUNNER_TEMP}/protection-current.json")"
+          {
+            echo '## Main branch protection'
+            echo 'Actual protection was read from GitHub; no PR-head code was executed.'
+            echo '```text'
+            printf '%s\n' "${drift}"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+          if [[ "${drift}" != "__COMPLIANT__" ]]; then
+            echo "::warning::Assessed branch-protection drift; see the job summary."
+          fi
+
+  report:
+    name: Publish assessed PR status
+    needs: audit
+    if: always() && needs.audit.outputs.head_sha != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      checks: write
+    steps:
+      - name: Report the real audit result on the inspected PR commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          HEAD_SHA: ${{ needs.audit.outputs.head_sha }}
+          AUDIT_RESULT: ${{ needs.audit.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY' > "${RUNNER_TEMP}/protection-check.json"
+          import json
+          import os
+          import sys
+          passed = os.environ["AUDIT_RESULT"] == "success"
+          json.dump({
+              "name": "Verify branch protection on main",
+              "head_sha": os.environ["HEAD_SHA"],
+              "status": "completed",
+              "conclusion": "success" if passed else "failure",
+              "details_url": os.environ["RUN_URL"],
+              "output": {
+                  "title": "Protection assessed" if passed else "Protection Not Assessed",
+                  "summary": "Trusted read-only audit completed; drift remains advisory."
+                      + "\n\n[Audit run](" + os.environ["RUN_URL"] + ")"
+                      if passed else "The trusted protection audit did not complete successfully. "
+                      + "[Audit run](" + os.environ["RUN_URL"] + ")",
+              },
+          }, sys.stdout)
+          PY
+          gh api --method POST "repos/${REPOSITORY}/check-runs" --input "${RUNNER_TEMP}/protection-check.json" --silent
