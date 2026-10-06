@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -54,7 +55,9 @@ def test_required_checks_have_pr_producers() -> None:
     assert "fail_on_warning" not in check_step["with"]
     assert "secrets." not in str(workflow)
     assert "pull_request" not in trusted["on"]
-    assert trusted["on"]["pull_request_target"]["branches"] == ["dev"]
+    assert "pull_request_target" not in trusted["on"]
+    assert trusted["on"]["workflow_run"]["workflows"] == [workflow["name"]]
+    assert trusted["on"]["workflow_run"]["types"] == ["completed"]
     assert trusted["permissions"] == {"contents": "read"}
     assert trusted["jobs"]["report"]["permissions"] == {"checks": "write"}
     assert 'passed = os.environ["AUDIT_RESULT"] == "success"' in report
@@ -101,3 +104,48 @@ def test_trusted_report_never_calls_an_unassessed_audit_successful() -> None:
         assert report["head_sha"] == "a" * 40
         assert report["name"] == "Verify branch protection on main"
         assert report["conclusion"] == ("success" if outcome == "success" else "failure")
+
+
+def test_trusted_audit_resolves_fork_pr_associations_without_head_code(tmp_path: Path) -> None:
+    workflow = yaml.safe_load(
+        (ROOT / ".github/workflows/protection-audit.yml").read_text(encoding="utf-8")
+    )
+    source = workflow["jobs"]["audit"]["steps"][0]["run"]
+    bash = shutil.which("bash")
+    assert bash is not None, "The existing shell contract suite requires Bash."
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    fake_gh = fake_bin / "gh"
+    fake_gh.write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\n"
+        'case "$2" in\n'
+        '  */commits/*/pulls*) cat fixture.json ;;\n'
+        '  */pulls/14) printf "%s\\t%s\\tdev\\topen\\n" "${FIXTURE_HEAD}" "${REPOSITORY}" ;;\n'
+        '  *) echo "Unexpected API request" >&2; exit 1 ;;\n'
+        "esac\n",
+        encoding="utf-8",
+    )
+    fake_gh.chmod(0o755)
+    for candidates, expected_success in (
+        ([{"number": 14, "state": "open", "base": {"repo": {"full_name": "example/repo"}, "ref": "dev"}}], True),
+        ([], False),
+    ):
+        (tmp_path / "fixture.json").write_text(json.dumps(candidates), encoding="utf-8")
+        result = subprocess.run(
+            [bash, "-s"],
+            input='export PATH="$PWD/bin:$PATH"\n' + source,
+            cwd=tmp_path,
+            env=os.environ | {
+                "EVENT_NAME": "workflow_run", "UPSTREAM_SHA": "b" * 40,
+                "PULL_NUMBER": "", "REPOSITORY": "example/repo", "DEFAULT_BRANCH": "dev",
+                "RUNNER_TEMP": ".", "GITHUB_OUTPUT": "outputs", "FIXTURE_HEAD": "a" * 40,
+            },
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        assert (result.returncode == 0) is expected_success, result.stderr
+        if expected_success:
+            assert (tmp_path / "outputs").read_text().splitlines() == [
+                f"head_sha={'a' * 40}", "pull_number=14",
+            ]
