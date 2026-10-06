@@ -1941,6 +1941,12 @@ Exit codes: `0` clean, `1` a rule failed (or warned with
 
 ## ⚠️ Runtime and repository notes
 
+[Marketplace PR checks](https://github.com/blackoutsecure/bos-marketplace-kit/blob/dev/.github/workflows/ci.yml) preserves the seven check names
+required by `dev` branch protection. It runs the real CLI tests, Ruff, CodeQL,
+lint, self-check, branding, and read-only branch-protection inspection on every
+PR; the Gatekeeper remains the release and maintenance dispatcher. Do not remove
+these producers while their check contexts are required.
+
 - **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to
   inspect.
