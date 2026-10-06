@@ -9,7 +9,7 @@ Two entrypoints:
 
   * Library  — import and call `build_payload(...)`, `compare(...)`,
                `parse_restrict_pushes(...)` directly.
-  * CLI      — `python -m marketplace_kit._bp build|compare|parse-restrict|from-graphql`
+  * CLI      — `python -m marketplace_kit._bp build|compare|parse-restrict`
                for shell-based callers that want a JSON-in / JSON-out
                contract without touching Python imports.
 
@@ -29,6 +29,7 @@ import json
 import os
 import sys
 from typing import Any
+
 
 # ---------------------------------------------------------------------------
 # Primitives
@@ -189,55 +190,6 @@ def _nested_enabled(obj: Any) -> Any:
     return obj  # absent / other shape; caller decides
 
 
-def from_graphql(response: object) -> dict[str, Any]:
-    """Normalize readable GraphQL protection data for the existing comparator."""
-    if not isinstance(response, dict) or response.get("errors"):
-        raise ValueError("GraphQL protection data is unavailable")
-    data = response.get("data")
-    repository = data.get("repository") if isinstance(data, dict) else None
-    ref = repository.get("ref") if isinstance(repository, dict) else None
-    rule = ref.get("branchProtectionRule") if isinstance(ref, dict) else None
-    if not isinstance(rule, dict):
-        raise ValueError("no readable branch-protection rule was returned")
-    top_fields = {
-        "required_linear_history": "requiresLinearHistory",
-        "lock_branch": "lockBranch",
-        "allow_force_pushes": "allowsForcePushes",
-        "allow_deletions": "allowsDeletions",
-        "required_conversation_resolution": "requiresConversationResolution",
-        "required_signatures": "requiresCommitSignatures",
-        "enforce_admins": "isAdminEnforced",
-    }
-    review_fields = {
-        "dismiss_stale_reviews": "dismissesStaleReviews",
-        "require_code_owner_reviews": "requiresCodeOwnerReviews",
-        "require_last_push_approval": "requireLastPushApproval",
-    }
-    bool_fields = (
-        *top_fields.values(), *review_fields.values(),
-        "requiresApprovingReviews", "requiresStatusChecks", "requiresStrictStatusChecks",
-    )
-    for field in bool_fields:
-        if type(rule.get(field)) is not bool:
-            raise ValueError(f"missing or invalid protection field: {field}")
-    count = rule.get("requiredApprovingReviewCount")
-    if type(count) is not int or count < 0:
-        raise ValueError("missing or invalid requiredApprovingReviewCount")
-    contexts = rule.get("requiredStatusCheckContexts")
-    if not isinstance(contexts, list) or any(not isinstance(item, str) for item in contexts):
-        raise ValueError("missing or invalid requiredStatusCheckContexts")
-    reviews = {name: rule[field] for name, field in review_fields.items()}
-    reviews["required_approving_review_count"] = count
-    return {
-        **{name: rule[field] for name, field in top_fields.items()},
-        "required_pull_request_reviews": reviews if rule["requiresApprovingReviews"] else None,
-        "required_status_checks": {
-            "strict": rule["requiresStrictStatusChecks"],
-            "checks": [{"context": context} for context in contexts],
-        } if rule["requiresStatusChecks"] else None,
-    }
-
-
 def compare(desired: dict[str, Any], current: dict[str, Any]) -> list[str]:
     """Return a list of human-readable drift findings between the
     ``desired`` payload (as built by :func:`build_payload`) and the
@@ -350,18 +302,6 @@ def _cmd_parse_restrict(args: argparse.Namespace) -> int:
     return 0
 
 
-def _cmd_from_graphql(args: argparse.Namespace) -> int:
-    try:
-        with open(args.input, encoding="utf-8") as handle:
-            current = from_graphql(json.load(handle))
-    except (OSError, ValueError) as exc:
-        print(f"::error::Branch protection is Not Assessed: {exc}", file=sys.stderr)
-        return 1
-    json.dump(current, sys.stdout)
-    sys.stdout.write("\n")
-    return 0
-
-
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(
         prog="python -m marketplace_kit._bp",
@@ -384,10 +324,6 @@ def main(argv: list[str] | None = None) -> int:
     p_rp = sub.add_parser("parse-restrict", help="Parse a bp_restrict_pushes spec to JSON.")
     p_rp.add_argument("--spec", default=None, help="Spec string (default: $BP_RESTRICT_PUSHES).")
     p_rp.set_defaults(func=_cmd_parse_restrict)
-
-    p_graphql = sub.add_parser("from-graphql", help="Validate and normalize read-only GraphQL data.")
-    p_graphql.add_argument("--input", required=True)
-    p_graphql.set_defaults(func=_cmd_from_graphql)
 
     ns = p.parse_args(argv)
     return ns.func(ns)

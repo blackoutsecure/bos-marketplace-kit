@@ -1948,10 +1948,14 @@ PR; the Gatekeeper remains the release and maintenance dispatcher. Do not remove
 these producers while their check contexts are required.
 The self-check inherits warning handling from the existing configuration cascade;
 development-workflow findings remain visible and are not silently discarded.
-Branch-protection inspection uses read-only GraphQL metadata and the existing
-shared protection comparator, without any App key or privileged token in PR
-code. Missing, forbidden, or malformed data fails as **Not Assessed** instead
-of returning a green advisory result. Assessed drift retains its advisory policy.
+Branch-protection inspection runs separately in the trusted
+[`protection-audit.yml`](https://github.com/blackoutsecure/bos-marketplace-kit/blob/dev/.github/workflows/protection-audit.yml)
+workflow. It never checks out PR-head code: the default-branch comparator reads
+protection with an attenuated App token, then a separate job publishes the real
+result against the inspected PR commit. Missing or forbidden data is **Not Assessed**
+and fails; assessed drift retains its advisory policy. Manual audits retain
+Gatekeeper authorization. The trusted workflow must be installed on the base
+branch before automatic PR-target audits can run.
 
 - **Checkout is required.** Put `actions/checkout` before the kit. The action
   validates `${{ github.workspace }}`; without a checkout there is nothing to
