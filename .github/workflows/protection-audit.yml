@@ -1,6 +1,8 @@
 name: Trusted branch protection audit
 
 "on":
+  push:
+    branches: [ci/trusted-protection-bootstrap-02d00e1b]
   pull_request_target:
     branches: [dev]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -15,8 +17,18 @@ permissions:
   contents: read
 
 jobs:
+  register:
+    name: Register trusted audit workflow
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - shell: bash
+        run: |
+          set -euo pipefail
+          echo "Registration only; no App credential is used on this bootstrap push."
   authorize:
     name: Authorize protection audit
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
