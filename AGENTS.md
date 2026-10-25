@@ -20,7 +20,8 @@ Beyond the listed `check` surface it ships nine more composites used org-wide: `
 
 Tech stack: Python 3.10+ (`requires-python = ">=3.10"`), Hatchling build, distribution
 `bos-marketplace-kit` `0.2.0`, console script `marketplace-kit`. `PyYAML>=6.0.3` is the only
-runtime dependency; the config resolver, AI layer, licence audit, and relevance scorer are
+runtime dependency on Python 3.11+; Python 3.10 also uses `tomli` for Cargo
+license metadata. The config resolver, AI layer, and relevance scorer are
 stdlib-only so composites run `src/` straight off a runner with no install. Dev extras:
 `pytest>=9.1.1`, `ruff>=0.16.4`, `pyyaml`, `tomli` on Python < 3.11. The root `action.yml`
 is `runs.using: composite`, a thin bash-and-Python delegate forwarding all ~55 inputs to

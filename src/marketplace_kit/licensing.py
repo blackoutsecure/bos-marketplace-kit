@@ -86,6 +86,10 @@ class Declaration(NamedTuple):
     raw: str         # what the surface literally said
 
 
+class CargoMetadataError(ValueError):
+    """Cargo license metadata could not be assessed."""
+
+
 class Audit(NamedTuple):
     identifier: str
     identifier_source: str        # "LICENSE file" | "ai" | "none"
@@ -199,6 +203,43 @@ def _from_package_json(root: Path) -> Declaration | None:
     return Declaration("package.json", normalise(raw), raw.strip())
 
 
+def _from_cargo(root: Path) -> Declaration | None:
+    path = root / "Cargo.toml"
+    if not path.is_file():
+        return None
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        try:
+            import tomli as tomllib
+        except ModuleNotFoundError as exc:
+            raise CargoMetadataError(
+                "Cargo.toml license checks on Python 3.10 require the declared tomli runtime dependency"
+            ) from exc
+    try:
+        document = tomllib.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
+        raise CargoMetadataError(f"Invalid Cargo.toml: {exc}") from exc
+    workspace = document.get("workspace", {})
+    if not isinstance(workspace, dict):
+        raise CargoMetadataError("Cargo.toml workspace must be a table")
+    inherited = workspace.get("package", {})
+    package = document.get("package", inherited)
+    if not isinstance(package, dict) or not isinstance(inherited, dict):
+        raise CargoMetadataError("Cargo.toml package metadata must be a table")
+    raw = package.get("license")
+    if isinstance(raw, dict) and raw.get("workspace") is True:
+        raw = inherited.get("license")
+        if raw is None:
+            raise CargoMetadataError("Cargo.toml inherits an undeclared workspace.package.license")
+    if raw is None:
+        return None
+    if not isinstance(raw, str) or not raw.strip():
+        raise CargoMetadataError("Cargo.toml license must be a non-empty SPDX string")
+    raw = raw.strip()
+    return Declaration("Cargo.toml", normalise(raw), raw)
+
+
 def _from_readme(root: Path) -> Declaration | None:
     for name in ("README.md", "README", "Readme.md", "readme.md"):
         path = root / name
@@ -226,7 +267,7 @@ def _from_readme(root: Path) -> Declaration | None:
 def declarations(root: Path | str = ".") -> tuple[Declaration, ...]:
     """Every licence claim the repo makes outside the LICENSE file."""
     root = Path(root)
-    found = (_from_readme(root), _from_pyproject(root), _from_package_json(root))
+    found = (_from_readme(root), _from_pyproject(root), _from_package_json(root), _from_cargo(root))
     return tuple(d for d in found if d is not None)
 
 

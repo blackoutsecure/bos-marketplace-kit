@@ -60,6 +60,12 @@ def main(argv: list[str]) -> int:
             denied=_list("DENIED_LICENSES"),
             max_age_days=_int("LICENSE_CATALOGUE_MAX_AGE_DAYS", 400),
         )
+    except licensing.CargoMetadataError as exc:
+        message = str(exc).replace("|", "/").replace("\n", " ")
+        for rule in licensing.RULES:
+            status = requirement if rule == "LC004" else "skip"
+            print(f"{rule}|{status}|{message}")
+        return 0
     except Exception as exc:  # noqa: BLE001 — never block the run on the audit
         for rule in licensing.RULES:
             print(f"{rule}|skip|licence audit unavailable ({type(exc).__name__})")

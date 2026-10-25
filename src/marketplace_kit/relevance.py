@@ -61,6 +61,10 @@ _BASELINE_WEIGHTS: tuple[tuple[str, int], ...] = (
     ("requirements*.txt", 20),
     ("go.mod", 20),
     ("go.sum", 20),
+    ("Cargo.toml", 20),
+    ("Cargo.lock", 20),
+    ("rust-toolchain", 20),
+    ("rust-toolchain.toml", 20),
     ("README.md", 15),
     ("README.*", 15),
     ("LICENSE", 5),
@@ -84,6 +88,7 @@ _BASELINE_WEIGHTS: tuple[tuple[str, int], ...] = (
     ("*.js", 25),
     ("*.ts", 25),
     ("*.go", 25),
+    ("*.rs", 25),
 )
 
 _DOCKER_ACTION_OVERRIDES: tuple[tuple[str, int], ...] = (
@@ -100,6 +105,7 @@ _LIBRARY_OVERRIDES: tuple[tuple[str, int], ...] = (
     ("*.js", 35),
     ("*.ts", 35),
     ("*.go", 35),
+    ("*.rs", 35),
 )
 
 _DEFAULT_OTHER_WEIGHT = 2

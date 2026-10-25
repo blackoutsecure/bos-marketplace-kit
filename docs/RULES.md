@@ -212,7 +212,7 @@ via `require_license_audit`.
 | `LC001` | `LICENSE`/`COPYING` resolves to a known SPDX identifier. Otherwise GitHub, npm, and consumer policy bots all read `NOASSERTION`.                                                    |
 | `LC002` | The identifier is OSI-approved, off `denied_licenses`, and on `allowed_licenses` when set. Catches `BUSL-1.1`, `SSPL-1.0`, `Elastic-2.0`, NonCommercial CC, and npm's `UNLICENSED`. |
 | `LC003` | The identifier is not OSI _superseded_ or _voluntarily retired_. The finding names the replacement (`EPL-1.0` → `EPL-2.0`, `MPL-1.1` → `MPL-2.0`, …).                               |
-| `LC004` | Every other surface agrees — README badge, `pyproject.toml`, `package.json`. Drift is the finding that recurs; the rest are one-time fixes.                                         |
+| `LC004` | Every other surface agrees — README badge, `pyproject.toml`, `package.json`, `Cargo.toml` (including workspace-inherited licenses). Invalid Cargo metadata is an explicit error. |
 | `LC005` | A filled-in `Copyright <year> <holder>` exists in `LICENSE`, `NOTICE`, or the README header, with no template placeholder left. The Apache appendix is excluded.                    |
 | `LC006` | A `NOTICE` exists when the licence is Apache-2.0 (§4(d)). Skipped otherwise.                                                                                                        |
 

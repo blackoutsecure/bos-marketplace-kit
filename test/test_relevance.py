@@ -80,6 +80,18 @@ def test_library_repo_type_weighs_any_python_module_highly() -> None:
     assert score == 35
 
 
+@pytest.mark.parametrize("path", ["Cargo.toml", "Cargo.lock", "rust-toolchain", "rust-toolchain.toml"])
+def test_rust_manifests_are_dependency_changes(path: str) -> None:
+    score, _ = relevance.score_changed_files([path])
+    assert score == 20
+
+
+def test_rust_source_and_tests_keep_their_distinct_weights() -> None:
+    assert relevance.score_changed_files(["crates/domain/lib.rs"])[0] == 25
+    assert relevance.score_changed_files(["tests/contract.rs"])[0] == 3
+    assert relevance.score_changed_files(["lib.rs"], repo_type="library")[0] == 35
+
+
 def test_weight_overrides_win_over_the_profile_default() -> None:
     score, breakdown = relevance.score_changed_files(
         ["README.md"], weight_overrides={"README.md": 99}

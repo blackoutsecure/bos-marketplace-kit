@@ -1771,8 +1771,8 @@ triggered actually succeeds.
    | Category              | Example paths                                                       | Default weight |
    | --------------------- | ------------------------------------------------------------------- | -------------: |
    | Entrypoint            | `action.yml`, `run.sh`, `lib.sh`, `helper.py`, `src/**`             |          35-40 |
-   | Ecosystem source      | `*.py`, `*.sh`, `*.js`, `*.ts`, `*.go` (outside `src/`)             |             25 |
-   | Dependency manifests  | `pyproject.toml`, `package.json`, `go.mod`, `requirements*.txt`     |             20 |
+   | Ecosystem source      | `*.py`, `*.sh`, `*.js`, `*.ts`, `*.go`, `*.rs` (outside `src/`)      |             25 |
+   | Dependency manifests  | `pyproject.toml`, `package.json`, `go.mod`, `requirements*.txt`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain*` | 20 |
    | Docs                  | `README.md`                                                         |             15 |
    | Legal                 | `LICENSE`, `NOTICE`                                                 |              5 |
    | Tests                 | `test/**`, `tests/**`, `test_*.py`                                  |              3 |

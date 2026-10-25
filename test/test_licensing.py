@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import builtins
 import json
+import runpy
 import sys
 from pathlib import Path
 
@@ -257,6 +259,81 @@ def test_malformed_package_json_is_ignored(tmp_path):
     write(tmp_path, "LICENSE", APACHE_HEADER)
     write(tmp_path, "package.json", "{not json")
     assert statuses(licensing.audit(tmp_path))["LC004"] == "pass"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        '[package]\nname = "fixture"\nlicense = "Apache-2.0"\n',
+        '[workspace.package]\nlicense = "Apache-2.0"\n',
+        '[package]\nlicense.workspace = true\n[workspace.package]\nlicense = "Apache-2.0"\n',
+    ],
+)
+def test_cargo_license_matches_file_including_workspace_inheritance(tmp_path, body):
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    write(tmp_path, "Cargo.toml", body)
+
+    audit = licensing.audit(tmp_path)
+
+    assert statuses(audit)["LC004"] == "pass"
+    assert audit.declarations == (licensing.Declaration("Cargo.toml", "Apache-2.0", "Apache-2.0"),)
+
+
+def test_cargo_license_drift_is_reported(tmp_path):
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    write(tmp_path, "Cargo.toml", '[package]\nlicense = "MIT"\n')
+
+    audit = licensing.audit(tmp_path)
+
+    assert statuses(audit)["LC004"] == "warn"
+    assert "Cargo.toml says `MIT`" in message(audit, "LC004")
+
+
+def test_cargo_dependency_metadata_is_not_a_project_license_claim(tmp_path):
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    write(tmp_path, "Cargo.toml", '[package]\nlicense-file = "LICENSE"\n[package.metadata]\nlicense = "MIT"\n')
+
+    assert licensing.audit(tmp_path).declarations == ()
+
+
+@pytest.mark.parametrize(
+    "body",
+    ["[package", "[package]\nlicense.workspace = true\n", "[package]\nlicense = false\n"],
+)
+def test_invalid_cargo_license_metadata_is_not_silently_accepted(tmp_path, body):
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    write(tmp_path, "Cargo.toml", body)
+
+    with pytest.raises(ValueError, match="Cargo.toml"):
+        licensing.audit(tmp_path)
+
+
+def test_action_reports_invalid_cargo_metadata_under_the_requested_policy(tmp_path, monkeypatch, capsys):
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    write(tmp_path, "Cargo.toml", "[package")
+    monkeypatch.setenv("REQ_LICENSE_AUDIT", "fail")
+    script = Path(__file__).resolve().parents[1] / ".github" / "actions" / "check" / "audit_license.py"
+
+    assert runpy.run_path(str(script))["main"]([str(script), str(tmp_path)]) == 0
+
+    assert "LC004|fail|Invalid Cargo.toml:" in capsys.readouterr().out
+
+
+def test_non_rust_licenses_do_not_require_a_toml_parser(tmp_path, monkeypatch):
+    original_import = builtins.__import__
+
+    def without_toml(name, *args, **kwargs):
+        if name in {"tomllib", "tomli"}:
+            raise ModuleNotFoundError(name)
+        return original_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", without_toml)
+    write(tmp_path, "LICENSE", APACHE_HEADER)
+    assert statuses(licensing.audit(tmp_path))["LC004"] == "pass"
+
+    write(tmp_path, "Cargo.toml", '[package]\nlicense = "Apache-2.0"\n')
+    with pytest.raises(licensing.CargoMetadataError, match="tomli runtime dependency"):
+        licensing.audit(tmp_path)
 
 
 # ---------------------------------------------------------------------------
